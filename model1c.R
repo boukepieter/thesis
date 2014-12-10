@@ -124,15 +124,18 @@ if (plotMethod == "raster"){
 
 }
 
+require(raster)
 library(topmodel)
+setwd("/media/boukepieter/schijfje_ottow/thesis/workspace1b")
+noSteps <- 12
 head <- raster("step/head.tif")
 filledDEM <- raster("step/filledDEM.sdat")
-cellAcc <- stack(sprintf("step/cell_acc%02d.sdat", 1:noSteps))
+cellAcc <- raster("step/cell_acc01.sdat")
 debiet <- cellAcc / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2
 potential <- debiet * head * 9.81 * 1000 # Joule / second
 
 # define point
-test <- potential[[1]]
+test <- potential
 test[test < 750000] <- NA
 point <- rasterToPoints(test, spatial=TRUE)
 coord <- point@coords
@@ -157,13 +160,15 @@ plot(area)
 data(huagrahuma)
 attach(huagrahuma)
 parameters["qs0"] <- 2e-4
-parameters["lnTe"] <- log
-parameters["m"] <- 0.07
+parameters["lnTe"] <- 25
+parameters["m"] <- 0.06
 parameters["dt"] <- 24 * 30
 parameters["Sr0"] <- 0.15
-parameters["k0"] <- 0.02
-parameters["td"] <- 0.1
+parameters["k0"] <- 2
+parameters["td"] <- 109
 parameters["CD"] <- 6.5
+parameters["Srmax"] <- 0.0022
+parameters["vr"] <- 0.06
 
 delay
 
@@ -180,6 +185,7 @@ et0 <- as.vector(et[2,2:length(et[2,])]) + 0.5
 et0 <- et0 / 1000 * 30
 
 save.image("/media/boukepieter/schijfje_ottow/thesis/workspace1b/topmodelEnvi.RData")
+load("/media/boukepieter/schijfje_ottow/thesis/workspace1b/topmodelEnvi.RData")
 # topmodel
 Qsim <- topmodel(parameters, topix, delay, rain, et0, verbose = TRUE)
 plot(as.vector(debiet[coord[1],coord[2]]), col="blue", type="l", ylim=c(0,4))
