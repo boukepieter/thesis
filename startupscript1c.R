@@ -1,12 +1,27 @@
 # Author: B.P. Ottow
 
-# parameters
+# installs
+install.packages("raster")
+install.packages("sp")
+install.packages("gdistance")
+install.packages("maptools")
+install.packages("RSAGA")
+install.packages("rgeos")
+install.packages("rgdal")
+install.packages("topmodel")
+install.packages("spacetime")
+install.packages("doParallel")
+install.packages("foreach")
 
-setwd("/media/boukepieter/schijfje_ottow/thesis/workspace1b")
+# parameters
+setwd("/media/boukepieter/schijfje_ottow/thesis/workspace") # linux
+setwd("E:/thesis/workspace/thesis") # gaia windows
 channelLength = 500
 minimumHead = 25
 minimumDebiet = 0.1
 minimumPotential = 100000
+require(RSAGA)
+env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS")
 
 # files
 ETdir <- "input/ET"
@@ -14,8 +29,9 @@ Pdir <- "input/P"
 DEMfile <- "input/DEMs.tif"
 
 source("model1c.R")
+setwd("E:/thesis/workspace1b")
 HydroPowerMonthly(DEMfile, Pdir, ETdir, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
-           minimumHead = minimumHead, channelLength = channelLength)
+           minimumHead = minimumHead, channelLength = channelLength, work_env=env)
 
 
 ####################################-Preprosessing-##################################################

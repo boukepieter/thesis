@@ -1,6 +1,9 @@
 require(raster)
 require(rgdal)
-require(gdistance)
+require(gdistance)  
+require(doParallel)
+require(foreach)
+require(plyr)
 
 HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, 
                         splitSize = 500, includeSides = TRUE) {
@@ -75,11 +78,16 @@ HeadOnRiver <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, i
   oldperc <- 0
   
   df <- data.frame(value=debiet[], nr=1:ncell(debiet))
-  df <- df[!is.na(df["value"]),]
-  ncal <- nrow(df)
+  dfe <- df[!is.na(df["value"]),]
+  ncal <- nrow(dfe)
+
+  cl <- makeCluster(6)  # Use 3 cores
+  registerDoParallel(cl) # register these 3 cores with the "foreach" package
+  #foreach(i=1:3) %dopar% sqrt(i)  #run a loop in parallel
+  #aaply(1:3, sqrt, .parallel=TRUE)  #apply a function across a vector in parallel
   
   if(includeSides){
-    for(k in 1:ncal){
+    for(k in 1:ncal) {
       i <- ceiling(df[k,2] / nc)
       j <- df[k,2] %% nc
       j <- ifelse(j == 0, nc, j)
@@ -98,18 +106,18 @@ HeadOnRiver <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, i
       A <- accCost(T, c1)
       head[i,j] <- DEM[i,j] - min(DEM[imin:imax,jmin:jmax][A[] < channelLength], na.rm=TRUE)
       
-      perc <- floor(k / ncal * 100)
-      if (perc > oldperc){
-        oldperc <- perc
-        print(paste(perc, "%", sep=""))
-      }
+#       perc <- floor(k / ncal * 100)
+#       if (perc > oldperc){
+#         oldperc <- perc
+#         print(paste(perc, "%", sep=""))
+#       }
     }
   }
   else {
     reslength <- (2 * cells + 1) * reso
     nro <- cells * 2 + 1
     c1 <- c((cells + 0.5) * reso,(cells + 0.5) * reso)
-    for(k in 1:ncal){
+    for(k in 1:ncal) {
       i <- ceiling(df[,2][k] / nc)
       j <- df[,2][k] %% nc
       if(i > cells && j > cells && i < nr - cells && j < nc - cells) {
@@ -125,11 +133,11 @@ HeadOnRiver <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, i
         A <- accCost(T, c1)
         head[i,j] <- DEM[i,j] - min(DEM[imin:imax,jmin:jmax][A[] < channelLength], na.rm=TRUE)
       }
-      perc <- floor(k / ncal * 100)
-      if (perc > oldperc){
-        oldperc <- perc
-        print(paste(perc, "%", sep=""))
-      }
+#       perc <- floor(k / ncal * 100)
+#       if (perc > oldperc){
+#         oldperc <- perc
+#         print(paste(perc, "%", sep=""))
+#       }
     }
   }
   return(head)
@@ -147,5 +155,42 @@ if(FALSE){
   debietTest <- crop(debiet, ext)
   DEMTest <- crop(filledDEMsmall, ext)
   system.time(head <- HeadOnRivern(DEMTest, debietTest, channelLength=500, minimumDebiet=0.1, includeSides=FALSE))
+  
+  cell <- function(k) {
+    i <- ceiling(dfe[k,2] / nc)
+    j <- dfe[k,2] %% nc
+    j <- ifelse(j == 0, nc, j)
+    imin <- ifelse(i - cells > 1, i - cells, 1)
+    imax <- ifelse(i + cells < nr, i + cells, nr)
+    jmin <- ifelse(j - cells > 1, j - cells, 1)
+    jmax <- ifelse(j + cells < nc, j + cells, nc)
+    yreso <- (imax - imin + 1) * reso
+    xreso <- (jmax - jmin + 1) * reso
+    r <- raster(nrows=imax - imin + 1, ncols=jmax - jmin + 1, 
+                xmn=0, xmx=xreso, ymn=0, ymx=yreso, crs="+proj=utm +units=m")
+    r[] <- debiet[imin:imax,jmin:jmax]
+    T <- transition(r, transitionFunction=mean, 8, symm=FALSE) 
+    T <- geoCorrection(T)
+    c1 <- c((j - jmin + 0.5) * reso,(imax - i + 0.5) * reso)
+    A <- accCost(T, c1)
+    res <- DEM[i,j] - min(DEM[imin:imax,jmin:jmax][A[] < channelLength], na.rm=TRUE)
+    
+    return(res)
+  }
+  
+  system.time(res <- lapply(1:ncal, cell))
+  require(parallel)
+  require(snow)
+  beginCluster(6)
+
+  system.time(res2 <- mclapply(1:ncal, cell))
+  
+  system.time( mclapply(1:4, function(xx){ Sys.sleep(10) }) )
+  source("../workspace/thesis/mclapply.hack.R")
+  
+  
+  df[!is.na(df["value"]),] <- res
+  head[] <- df["value"]
+
 }
 
