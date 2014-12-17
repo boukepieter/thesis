@@ -21,17 +21,17 @@ minimumHead = 25
 minimumDebiet = 0.1
 minimumPotential = 100000
 require(RSAGA)
-env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS")
+work_env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS")
 
 # files
 ETdir <- "input/ET"
 Pdir <- "input/P"
-DEMfile <- "input/DEMs.tif"
+DEMfile <- "input/DEM.tif"
 
 source("model1c.R")
 setwd("E:/thesis/workspace1b")
 HydroPowerMonthly(DEMfile, Pdir, ETdir, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
-           minimumHead = minimumHead, channelLength = channelLength, work_env=env)
+           minimumHead = minimumHead, channelLength = channelLength, work_env=work_env)
 
 
 ####################################-Preprosessing-##################################################

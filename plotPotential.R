@@ -3,6 +3,7 @@ require(spacetime)
 require(raster)
 require(rgeos)
 require(maptools)
+wgs84 = CRS('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 
 # Raster
 PlotTimeRaster <- function(step = "month"){
@@ -20,7 +21,7 @@ PlotTimeRaster <- function(step = "month"){
   RBTS <- new("RasterBrickTimeSeries", rasters=potential_wgs, variable="Potential (kW)",
               sampled = points,
               TimeSpan.begin=btimes, TimeSpan.end=etimes)
-  test(RBTS, colour_scale = SAGA_pal[[1]],  
+  plotKML(RBTS, colour_scale = SAGA_pal[[1]],  
       file.name="potentialRaster.kml", folder.name="potential (kW)")
 }
 

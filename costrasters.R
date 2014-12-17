@@ -4,9 +4,10 @@ require(gdistance)
 require(doParallel)
 require(foreach)
 require(plyr)
+require(utils)
 
 HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, 
-                        splitSize = 500, includeSides = TRUE) {
+                        splitSize = 200, includeSides = TRUE) {
   #TODO(text)
   reso <- res(DEM)[1]
   cells <-  round(channelLength / reso)
@@ -18,6 +19,23 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
   rowIte <- ceiling(nrow(DEM) / splitSize)
   colIte <- ceiling(ncol(DEM) / splitSize)
   print(paste("splitting up in", rowIte * colIte, "pieces..."))
+  
+  
+  
+  DEMparts <- NULL
+  DEMparts[1:rowIte * colIte] <- list(NULL)
+  debietParts <- NULL
+  debietParts[1:rowIte * colIte] <- list(NULL)
+  istarts <- rep(0, rowIte * colIte)
+  imins <- rep(0, rowIte * colIte)
+  iends <- rep(0, rowIte * colIte)
+  imaxs <- rep(0, rowIte * colIte)
+  jstarts <- rep(0, rowIte * colIte)
+  jmins <- rep(0, rowIte * colIte)
+  jends <- rep(0, rowIte * colIte)
+  jmaxs <- rep(0, rowIte * colIte)
+  n <- 1
+  
   for(k in 1:rowIte){
     istart <- 1 + (k - 1) * splitSize
     imin <- istart - cells
@@ -25,6 +43,11 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
     iend <- splitSize + (k - 1) * splitSize
     imax <- iend + cells
     imax <- min(nrow(DEM),imax)
+    
+    istarts[n:(n+colIte-1)] <- istart
+    imins[n:(n+colIte-1)] <- imin
+    iends[n:(n+colIte-1)] <- iend
+    imaxs[n:(n+colIte-1)] <- imax
     for(l in 1:colIte){
       jstart <- 1 + (l - 1) * splitSize
       jmin <- jstart - cells
@@ -32,6 +55,12 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
       jend <- splitSize + (l - 1) * splitSize
       jmax <- jend + cells
       jmax <- min(ncol(DEM),jmax)
+      
+      jstarts[n] <- jstart
+      jmins[n] <- jmin
+      jends[n] <- jend
+      jmaxs[n] <- jmax
+      
       DEMpart <- raster(nrows=imax - imin + 1, ncols=jmax - jmin + 1, 
                         xmn=xmin(DEM) + (jmin - 1) * reso, 
                         xmx=xmin(DEM) + (jmax) * reso, 
@@ -39,6 +68,8 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
                         ymx=ymax(DEM) - (imin - 1) * reso, 
                         crs=projection(DEM))
       DEMpart[] <- DEM[imin:imax,jmin:jmax]
+      DEMparts[[n]] <- DEMpart
+      
       debietPart <- raster(nrows=imax - imin + 1, ncols=jmax - jmin + 1, 
                            xmn=xmin(DEM) + (jmin - 1) * reso, 
                            xmx=xmin(DEM) + (jmax) * reso, 
@@ -46,19 +77,40 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
                            ymx=ymax(DEM) - (imin - 1) * reso, 
                            crs=projection(DEM))
       debietPart[] <- debiet[imin:imax,jmin:jmax]
-      if (imin == 1 || imax == nrow(DEM) || jmin == 1 || jmax == ncol(DEM)){
-        headPart <- HeadOnRiver(DEMpart, debietPart, channelLength, minimumDebiet, includeSides)
-      }
-      else{
-        headPart <- HeadOnRiver(DEMpart, debietPart, channelLength, minimumDebiet, includeSides=FALSE)
-      }
-      head[istart:min(iend, imax),jstart:min(jend,jmax)] <- 
-        headPart[(1+istart-imin):(nrow(headPart) + min(iend,imax) - imax),
-                 (1+jstart-jmin):(ncol(headPart) + min(jend,jmax) - jmax)]
-      done = done + 1
-      print(paste(done, "/", colIte * rowIte, " done...", sep=""))
+      debietParts[[n]] <- debietPart
+      n <- n + 1
     }
   }
+  
+    
+    print("clusters made, starting calculations...")
+    cl <- makeCluster(6)  # Use 3 cores
+    registerDoParallel(cl) # register these 3 cores with the "foreach" package
+    ##foreach(i=1:3) %dopar% sqrt(i)  #run a loop in parallel
+    ##aaply(1:3, sqrt, .parallel=TRUE)  #apply a function across a vector in parallel
+  
+    sink("log.txt", append=TRUE)  # needs testing
+    headParts <- foreach(i=1:(n-1), .packages=c("gdistance","raster"), .export="HeadOnRiver") %dopar% {
+      if (imins[i] == 1 || imaxs[i] == nrow(DEM) || jmins[i] == 1 || jmaxs[i] == ncol(DEM)){
+        headPart <- HeadOnRiver(DEMparts[[i]], debietParts[[i]], channelLength, minimumDebiet, includeSides)
+      }
+      else{
+        headPart <- HeadOnRiver(DEMparts[[i]], debietParts[[i]], channelLength, minimumDebiet, includeSides=FALSE)
+      }
+      print(i)
+      headPart
+    }
+  sink()
+  stopCluster(cl)
+    print("calculations done, sewing back together...")
+    for(i in 1:(n-1)) {
+      head[istarts[i]:min(iends[i], imaxs[i]),jstarts[i]:min(jends[i],jmaxs[i])] <- 
+        headParts[[i]][(1+istarts[i]-imins[i]):(nrow(headParts[[i]]) + min(iends[i],imaxs[i]) - imaxs[i]),
+                 (1+jstarts[i]-jmins[i]):(ncol(headParts[[i]]) + min(jends[i],jmaxs[i]) - jmaxs[i])]
+      done = done + 1
+      #print(paste(done, "/", colIte * rowIte, " done...", sep=""))
+    }
+  
   return(head)
 }
 
@@ -78,14 +130,9 @@ HeadOnRiver <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, i
   oldperc <- 0
   
   df <- data.frame(value=debiet[], nr=1:ncell(debiet))
-  dfe <- df[!is.na(df["value"]),]
-  ncal <- nrow(dfe)
+  df <- df[!is.na(df["value"]),]
+  ncal <- nrow(df)
 
-  cl <- makeCluster(6)  # Use 3 cores
-  registerDoParallel(cl) # register these 3 cores with the "foreach" package
-  #foreach(i=1:3) %dopar% sqrt(i)  #run a loop in parallel
-  #aaply(1:3, sqrt, .parallel=TRUE)  #apply a function across a vector in parallel
-  
   if(includeSides){
     for(k in 1:ncal) {
       i <- ceiling(df[k,2] / nc)
@@ -146,15 +193,19 @@ HeadOnRiver <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, i
 if(FALSE){
   channelLength = 500
   minimumDebiet = 0.1
-  filledDEMsmall <- raster("step/filledDEMnew.sdat")
-  cellAcc <- raster("step/cell_acc.sdat")
+  filledDEMsmall <- raster("step/filledDEM.sdat")
+  cellAcc <- stack(sprintf("step/cell_acc%02d.sdat", 1:noSteps))
   debiet <- cellAcc / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2
+  debiet <- max(debiet)
   
   plot(filledDEMsmall)
   ext <- drawExtent()
   debietTest <- crop(debiet, ext)
   DEMTest <- crop(filledDEMsmall, ext)
-  system.time(head <- HeadOnRivern(DEMTest, debietTest, channelLength=500, minimumDebiet=0.1, includeSides=FALSE))
+  system.time(head <- HeadOnRiver.large(filledDEMsmall, debiet, channelLength=500, minimumDebiet=0.1, 
+                                   includeSides=FALSE, splitSize=100))
+  # 404
+  # 110
   
   cell <- function(k) {
     i <- ceiling(dfe[k,2] / nc)

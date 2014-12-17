@@ -10,12 +10,13 @@ require(rgdal)
 require(sp)
 require(RSAGA)
 
-if(work_env == ""){
+if(type(work_env) == "character"){
   work_env <- rsaga.env()
 }
 
 dir.create("step")
 dir.create("output")
+rasterOptions(tmpdir=paste(getwd(),"step", sep="/")) # needs testing
 
 ETfiles <- list.files(ETdir, pattern=".tif", full.names=TRUE)
 Pfiles <- list.files(Pdir, pattern=".tif", full.names=TRUE)
@@ -68,11 +69,11 @@ for (i in 1:noSteps) {
 }
 
 cellAcc <- stack(sprintf("step/cell_acc%02d.sdat", 1:noSteps))
-debiet <- cellAcc / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2
+debiet <- calc(cellAcc, fun=function(x) x / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2)
 
 # head
 print("calculating head...")
-source("costrasters.R")
+#source("costrasters.R")
 head <- HeadOnRiver.large(filledDEM, max(debiet), minimumDebiet=minimumDebiet, 
                     channelLength=channelLength)
 writeRaster(head, filename="step/head.tif", format="GTiff", overwrite=TRUE)
@@ -97,6 +98,7 @@ print(noOfPoints)
 
 # output
 print("saving output...")
+#source("plotPotential.R")
 data(SAGA_pal)
 setwd("output")
 for (i in 1:noSteps){
@@ -110,7 +112,7 @@ for (i in 1:noSteps){
 }
 
 # plot
-source("../plotPotential.R")
+
 names(potential) <- sprintf("potentialRaster%02d", seq(1,12))
 if (plotMethod == "raster"){
   PlotTimeRaster()
