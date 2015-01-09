@@ -15,7 +15,7 @@ install.packages("foreach")
 
 # parameters
 setwd("/media/boukepieter/schijfje_ottow/thesis/workspace") # linux
-setwd("E:/thesis/workspace/thesis") # gaia windows
+sourceCode <- "E:/thesis/workspace/thesis" # gaia windows
 channelLength = 500
 minimumHead = 25
 minimumDebiet = 0.1
@@ -24,12 +24,14 @@ require(RSAGA)
 work_env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS")
 
 # files
+setwd("E:/thesis/workspace1b")
 ETdir <- "input/ET"
 Pdir <- "input/P"
 DEMfile <- "input/DEM.tif"
-
+flist <- list.files(sourceCode, ".+[.]R$", full.names = TRUE)
+dir.create(paste(getwd(), "scripts", sep="/"))
+file.copy(flist, paste(getwd(), "scripts", sep="/"))
 source("model1c.R")
-setwd("E:/thesis/workspace1b")
 HydroPowerMonthly(DEMfile, Pdir, ETdir, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
            minimumHead = minimumHead, channelLength = channelLength, work_env=work_env)
 
