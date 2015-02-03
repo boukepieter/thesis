@@ -12,18 +12,21 @@ install.packages("topmodel")
 install.packages("spacetime")
 install.packages("doParallel")
 install.packages("foreach")
+install.packages("gdalUtils")
+install.packages("animation")
 
 # parameters
-setwd("/media/boukepieter/schijfje_ottow/thesis/workspace") # linux
-sourceCode <- "E:/thesis/workspace/thesis" # gaia windows
 channelLength = 500
 minimumHead = 25
 minimumDebiet = 0.1
 minimumPotential = 100000
+coord <- matrix(c(125.175278, 6.383889), nrow=1)
 require(RSAGA)
-work_env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS")
+work_env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS") # windows
 
 # files
+setwd("/media/boukepieter/schijfje_ottow/thesis/workspace") # linux
+sourceCode <- "E:/thesis/workspace/thesis" # gaia windows
 setwd("E:/thesis/workspace1b")
 ETdir <- "input/ET"
 Pdir <- "input/P"
@@ -31,8 +34,10 @@ DEMfile <- "input/DEM.tif"
 flist <- list.files(sourceCode, ".+[.]R$", full.names = TRUE)
 dir.create(paste(getwd(), "scripts", sep="/"))
 file.copy(flist, paste(getwd(), "scripts", sep="/"))
-source("model1c.R")
-HydroPowerMonthly(DEMfile, Pdir, ETdir, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
+
+# model
+source("scripts/model1c.R")
+HydroPowerMonthly(DEMfile, Pdir, ETdir, coord=coord, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
            minimumHead = minimumHead, channelLength = channelLength, work_env=work_env)
 
 

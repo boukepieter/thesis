@@ -81,12 +81,12 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
   
   
   print("clusters made, starting calculations...")
-  cl <- makeCluster(6)  # Use 3 cores
+  cl <- makeCluster(6)  # Use 6 cores
   registerDoParallel(cl) # register these 3 cores with the "foreach" package
   ##foreach(i=1:3) %dopar% sqrt(i)  #run a loop in parallel
   ##aaply(1:3, sqrt, .parallel=TRUE)  #apply a function across a vector in parallel
   
-  writeLines(c(""), "log.txt")  # needs testing
+  writeLines(c(""), "log.txt")  
   headParts <- foreach(i=1:(n-1), .packages=c("gdistance","raster"), .export="HeadOnRiver",
                        .errorhandling="pass") %dopar% {
                          
@@ -117,7 +117,7 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
       headParts[[i]][(1+istarts[i]-imins[i]):(nrow(headParts[[i]]) + min(iends[i],imaxs[i]) - imaxs[i]),
                      (1+jstarts[i]-jmins[i]):(ncol(headParts[[i]]) + min(jends[i],jmaxs[i]) - jmaxs[i])]
     done = done + 1
-    #print(paste(done, "/", colIte * rowIte, " done...", sep=""))
+    print(paste(done, "/", colIte * rowIte, " done...", sep=""))
   }
   
   return(head)

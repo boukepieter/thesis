@@ -1,8 +1,8 @@
 # Author: B.P. Ottow
 
 ################################# Model starts ############################################
-HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir = "input/ET",
-                              channelLength = 500, minimumHead = 25, minimumDebiet = 0.1, minimumPotential = 1000000,
+HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir = "input/ET", coord,
+                              channelLength = 500, minimumHead = 25, minimumDebiet = 0.1, minimumPotential = 100000,
                               plotToGE = TRUE, work_env = "", plotMethod = "raster") {
   # load in input and packages
   require(raster)
@@ -16,7 +16,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   
   dir.create("step")
   dir.create("output")
-  rasterOptions(tmpdir=paste(getwd(),"step", sep="/")) # needs testing
+  rasterOptions(tmpdir=paste(getwd(),"step", sep="/")) 
   
   ETfiles <- list.files(ETdir, pattern=".tif", full.names=TRUE)
   Pfiles <- list.files(Pdir, pattern=".tif", full.names=TRUE)
@@ -24,27 +24,24 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   
   ET <- stack(ETfiles[1:noSteps])
   P <- stack(Pfiles[1:noSteps])
-  DEM <- raster(DEMfile)
+  
+  # Fill and clip DEM:
+  source("scripts/watershed.R")
+  filledDEM <- getCatchment(DEMfile, coord, work_env)
+  writeRaster(filledDEM, filename="step/filledDEM.tif", format="GTiff", overwrite=TRUE)
+  rsaga.geoprocessor(lib="io_gdal", module=0,param=list(GRIDS=paste(getwd(),"step/filledDEM.sgrd",sep="/"), 
+                                                        FILES=paste(getwd(), "step/filledDEM.tif",sep="/"), 
+                                                        TRANSFORM=TRUE, INTERPOL=1),
+                     env=work_env, show.output.on.console = FALSE, warn = FALSE)
   
   # runoff calc
   print("calculating runoff...")
   Presample <- resample(P, ET, method='bilinear')
   runoff <- Presample - ET
-  runoffRes <- resample(runoff, DEM, method='bilinear')
+  runoffRes <- resample(runoff, filledDEM, method='bilinear')
   for (i in 1:noSteps){
     writeRaster(runoffRes[[i]], filename=sprintf("step/runoffRes%02d.tif",i), format="GTiff", overwrite=TRUE)  
   }
-  
-  # Fill DEM:
-  print("filling DEM...")
-  rsaga.geoprocessor(lib="io_gdal", module=0,param=list(GRIDS=paste(getwd(),"step/DEM.sgrd",sep="/"), 
-                                                        FILES=paste(getwd(), DEMfile,sep="/"), 
-                                                        TRANSFORM=TRUE, INTERPOL=1),
-                     env=work_env, show.output.on.console = FALSE, warn = FALSE)
-  rsaga.geoprocessor(lib="ta_preprocessor", module=3, 
-                     param=list(DEM="step/DEM.sgrd", RESULT="step/filledDEM.sgrd", MINSLOPE=0.01),
-                     env=work_env, show.output.on.console = FALSE, warn = FALSE)
-  filledDEM <- raster("step/filledDEM.sdat")
   
   # Flow accumulation
   print("calculating flow accumulation...")
@@ -80,6 +77,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   
   # hydro potential
   print("calculating potential...")
+  debiet <- crop(debiet, potential)
   potential <- debiet * head * 9.81 * 1000 # Joule / second
   
   # filters
@@ -110,10 +108,12 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
     #     next
     #   }
   }
+  # potential <- stack(sprintf("potential%02d.tif", 1:noSteps))
+  
   
   # plot
-  
   names(potential) <- sprintf("potentialRaster%02d", seq(1,12))
+  names(highPotential) <- sprintf("potentialRaster%02d", seq(1,12))
   if (plotMethod == "raster"){
     PlotTimeRaster()
   } else if (plotMethod == "vector"){
@@ -194,3 +194,18 @@ plot(as.vector(debiet[coord[1],coord[2]]), col="blue", type="l", ylim=c(0,4))
 points(Qsim$Q * topi$area[coord[1],coord[2]] / 30 / 24 / 3600, col="red", type="l")
 
 as.vector(debiet[coord[1],coord[2]])
+
+summary(cellAccS[[1]])[5]
+
+debiet <- cellAccS
+function(){
+  for (i in seq(1,12)){
+    debiet[[i]][] <- 0
+    for (j in seq(0,11)){
+      k <- ifelse((i - j) < 1, i - j + 12, i - j)
+      print(k)
+      debiet[[i]] <- debiet[[i]] + cellAccS[[k]] * 0.5 ^ j
+      print(paste(i,j))
+    }
+  }
+}
