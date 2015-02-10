@@ -68,25 +68,42 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   cellAcc <- stack(sprintf("step/cell_acc%02d.sdat", 1:noSteps))
   debiet <- calc(cellAcc, fun=function(x) x / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2)
   
+  # Runoff delay scenarios
+  source("scripts/runoffStorage.R")
+  factors <- list(0.5,0.7)
+  runoffs <- lapply(factors,FUN=storage.fun,debiet=debiet,noSteps=noSteps)
+  poi <- SpatialPoints(matrix(c(737522.424973, 706557.393475),nrow=1),
+                       proj4string=CRS(projection(debiet[[1]])))
+  testplot.storages(runoffs,debiet,poi)
+  runoffs <- c(debiet, runoffs)
+  
   # head
   print("calculating head...")
   source("scripts/costrasters.R")
   head <- HeadOnRiver.large(filledDEM, max(debiet), minimumDebiet=minimumDebiet, 
                             channelLength=channelLength)
   writeRaster(head, filename="step/head.tif", format="GTiff", overwrite=TRUE)
-  
+    
   # hydro potential
   print("calculating potential...")
-  debiet <- crop(debiet, potential)
-  potential <- debiet * head * 9.81 * 1000 # Joule / second
+  runoffs <- lapply(runoffs, FUN=crop, y=head)
+  potentials <- lapply(runoffs, FUN=function(x, head) {x * head * 9.81 * 1000}, head=head) # Joule / second
+  
+  
   
   # filters
-  for (i in 1:noSteps){
-    potential[[i]][debiet[[i]] < minimumDebiet] <- NA
-    potential[[i]][head < minimumHead] <- NA
+  filter.fun <- function(pot, deb, head, minDeb, minHead){
+    pot[deb < minDeb] <- NA
+    pot[head < minHead] <- NA
+    pot
   }
+  potentials <- mapply(FUN=filter.fun, pot=potentials, deb=runoffs, 
+                 MoreArgs=list(head=head, minDeb=minimumDebiet, minHead=minimumHead),
+                 SIMPLIFY=FALSE)
+    
   
-  highPotential <- potential
+  highPotentials <- potentials
+  # tot hierrrrr....
   for (i in 1:noSteps){
     highPotential[[i]][potential[[i]] < minimumPotential] <- NA # highpotential spots  
   }
@@ -124,88 +141,4 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   }
   
   
-}
-
-require(raster)
-library(topmodel)
-setwd("/media/boukepieter/schijfje_ottow/thesis/workspace1b")
-noSteps <- 12
-head <- raster("step/head.tif")
-filledDEM <- raster("step/filledDEM.sdat")
-cellAcc <- raster("step/cell_acc01.sdat")
-debiet <- cellAcc / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2
-potential <- debiet * head * 9.81 * 1000 # Joule / second
-
-# define point
-test <- potential
-test[test < 750000] <- NA
-point <- rasterToPoints(test, spatial=TRUE)
-coord <- point@coords
-coord <- c(rowFromY(test, coord[2]), colFromX(test, coord[1]))
-
-# catchment
-catch <- subcatch(as.matrix(filledDEM), coord)
-cat <- filledDEM
-cat[] <- catch
-
-# topographic index
-topi <- topidx(as.matrix(filledDEM), res(filledDEM)[1])
-atb <- filledDEM
-atb[] <- topi$atb
-atb <- mask(atb, cat, maskvalue=0)
-topix <- make.classes(atb[],10)
-area <- filledDEM
-area[] <- topi$area
-plot(area)
-
-# parameters & delay
-data(huagrahuma)
-attach(huagrahuma)
-parameters["qs0"] <- 2e-4
-parameters["lnTe"] <- 25
-parameters["m"] <- 0.06
-parameters["dt"] <- 24 * 30
-parameters["Sr0"] <- 0.15
-parameters["k0"] <- 2
-parameters["td"] <- 109
-parameters["CD"] <- 6.5
-parameters["Srmax"] <- 0.0022
-parameters["vr"] <- 0.06
-
-delay
-
-# rain
-Pres <- resample(P, filledDEM, method="bilinear")
-r <- zonal(Pres, cat, 'mean')
-rain <- as.vector(r[2,2:length(r[2,])])
-rain <- rain / 1000 * 30
-
-# ET0
-ETres <- resample(ET, filledDEM, method="bilinear")
-et <- zonal(ETres, cat, 'mean')
-et0 <- as.vector(et[2,2:length(et[2,])]) + 0.5
-et0 <- et0 / 1000 * 30
-
-save.image("/media/boukepieter/schijfje_ottow/thesis/workspace1b/topmodelEnvi.RData")
-load("/media/boukepieter/schijfje_ottow/thesis/workspace1b/topmodelEnvi.RData")
-# topmodel
-Qsim <- topmodel(parameters, topix, delay, rain, et0, verbose = TRUE)
-plot(as.vector(debiet[coord[1],coord[2]]), col="blue", type="l", ylim=c(0,4))
-points(Qsim$Q * topi$area[coord[1],coord[2]] / 30 / 24 / 3600, col="red", type="l")
-
-as.vector(debiet[coord[1],coord[2]])
-
-summary(cellAccS[[1]])[5]
-
-debiet <- cellAccS
-function(){
-  for (i in seq(1,12)){
-    debiet[[i]][] <- 0
-    for (j in seq(0,11)){
-      k <- ifelse((i - j) < 1, i - j + 12, i - j)
-      print(k)
-      debiet[[i]] <- debiet[[i]] + cellAccS[[k]] * 0.5 ^ j
-      print(paste(i,j))
-    }
-  }
 }
