@@ -14,6 +14,7 @@ install.packages("doParallel")
 install.packages("foreach")
 install.packages("gdalUtils")
 install.packages("animation")
+install.packages("plotKML")
 
 # parameters
 channelLength = 500
