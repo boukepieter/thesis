@@ -1,5 +1,6 @@
-setwd("E:/thesis/data/reference dem/data")
+setwd("E:/thesis/data/reference dem")
 library(sp)
+library(rgdal)
 library(plotKML)
 library(raster)
 library(gstat)
@@ -40,15 +41,17 @@ writeRaster(asterUTM2, filename="asterUTM.tif" , format="GTiff", overwrite=TRUE)
 writeOGR(points, dsn=getwd(), layer= "points", 
          driver="ESRI Shapefile", overwrite=TRUE)
 
-points <- points[abs(points$difference) < 1000,]
+## after reading
+points <- readOGR(getwd(), "points")
+points <- points[abs(points$diffrnc) < 1000,]
 
-points@data[abs(points$difference) > 100,]
-hist(points$difference, breaks=100, xlim=c(-100,100))
-mean(points$difference)
-sd(points$difference)
+points@data[abs(points$diffrnc) > 100,]
+hist(points$diffrnc, breaks=100, xlim=c(-100,100))
+mean(points$diffrnc)
+sd(points$diffrnc)
 
 # gstat
-g <- gstat(formula = difference~1, data = points)
+g <- gstat(formula = diffrnc~1, data = points)
 variogram <- variogram(g)
 variogram <- variogram(g, boundaries = c(0, 1:10*50, seq(600,1200,by=100)))
 plot(variogram)
@@ -63,7 +66,47 @@ vgmf
 attr(vgmf, "SSErr")
 
 # simulation of maps
+geul <- read.table("SMS/geuldata.txt", header = TRUE)
+coordinates(geul) <- ~x+y
+mask <- readGDAL("SMS/geul_mask.txt")
+gpb <- gstat(id = c("pb"), formula = pb~1, data = geul)
+vgpb <- variogram(gpb, boundaries = c(50,100,150,200,300,400,600,800,1000))
+vgmpb <- vgm(psill = 15000, range = 400, model = "Sph", add.to = vgm(psill = 1000, range = 100, model = "Sph"))
+vgmpb <- fit.variogram(vgpb,vgmpb)
+plot(vgpb,vgmpb, plot.numbers = TRUE)
+
+geul.krig <- krige(pb~1, geul, newdata = mask, vgmpb)
+MC <- 100
 set.seed(2373)
-geul.sim <- krige(difference~1, points, newdata = asterUTM2, vgmf, nsim = 3, nmax = 24)
-spplot (geul.sim, zcol = c("sim1", "sim3", "sim8", "sim15"), xlim=c(190200,191300), ylim=c(314300,315600),
+geul.sim <- krige(pb~1, geul, newdata = mask, vgmpb, nsim = 100, nmax = 24)
+
+plot(asterUTM2)
+ext <- drawExtent()
+test <- crop(asterUTM2, ext)
+test <- as(test, 'SpatialGridDataFrame')
+test[!is.na(test@data)] <- 1
+projection(test) <- NA
+set.seed(2373)
+aster.sim <- krige(V3~1, points, newdata=test, model=vgmf, nsim = 3, nmax = 3)
+spplot (DEM.sim, zcol = c("sim1", "sim2", "sim3"), #xlim=c(190200,191300), ylim=c(314300,315600),
         col.regions = bpy.colors())
+save(vgmf,file="vgmf.RData")
+
+spplot (DEM.sim[1], zcol = "sim1", #xlim=c(190200,191300), ylim=c(314300,315600),
+        col.regions = bpy.colors())
+
+#now for my study area:
+load("vgmf.RData")
+DEM <- raster("E:/thesis/workspace1b/input/DEM.tif")
+filledDEM <- raster("E:/thesis/workspace1b/step/filledDEM.tif")
+clippedDEM <- crop(DEM, filledDEM)
+mask <- clippedDEM
+mask <- as(mask, 'SpatialGridDataFrame')
+mask[!is.na(mask@data)] <- 1
+points <- rasterToPoints(clippedDEM, fun=function(x){!is.na(x)}, spatial=TRUE)
+test <- krige(DEM~1, points, newdata=mask, model=vgmf, nsim=1, nmax=3)
+
+gpb <- gstat(id = c("DEM"), formula = DEM~1, data = points, model=vgmf, nmax=25)
+projection(mask) <- NA
+DEM.sim <- predict.gstat(gpb, mask, nsim=3, debug.level=-1)
+

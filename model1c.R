@@ -70,11 +70,11 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   
   # Runoff delay scenarios
   source("scripts/runoffStorage.R")
-  factors <- list(0.5,0.7)
+  factors <- list(0.4,0.7)
   runoffs <- lapply(factors,FUN=storage.fun,debiet=debiet,noSteps=noSteps)
   poi <- SpatialPoints(matrix(c(737522.424973, 706557.393475),nrow=1),
                        proj4string=CRS(projection(debiet[[1]])))
-  testplot.storages(runoffs,debiet,poi)
+  testplot.storages(runoffs,debiet,poi, factors)
   runoffs <- c(debiet, runoffs)
   
   # head
@@ -83,6 +83,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   head <- HeadOnRiver.large(filledDEM, max(debiet), minimumDebiet=minimumDebiet, 
                             channelLength=channelLength)
   writeRaster(head, filename="step/head.tif", format="GTiff", overwrite=TRUE)
+  #head <- raster("step/head.tif")
     
   # hydro potential
   print("calculating potential...")
@@ -100,8 +101,10 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   potentials <- mapply(FUN=filter.fun, pot=potentials, deb=runoffs, 
                  MoreArgs=list(head=head, minDeb=minimumDebiet, minHead=minimumHead),
                  SIMPLIFY=FALSE)
-    
-  
+  for (i in 1:3){
+    writeRaster(potentials[[i]], filename=sprintf("output/potential%i_%02d.tif", i,seq(1:12)), 
+                bylayer=TRUE, format="GTiff", overwrite=TRUE)                
+  }
   highPotentials <- potentials
   # tot hierrrrr....
   for (i in 1:noSteps){

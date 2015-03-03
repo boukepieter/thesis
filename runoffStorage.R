@@ -6,7 +6,7 @@ storage.fun <- function(factor, debiet, noSteps){
   res <- apply(factors, MARGIN=1,FUN=function(x){sum(debiet * x)})
   return(stack(res))
 }
-testplot.storages <- function(res, debiet, poi){
+testplot.storages <- function(res, debiet, poi, factors){
   nul <- extract(debiet,poi)
   facts <- lapply(res,FUN=extract,y=poi)
   plot(nul[1,],col="red", type='b', xlab="step", ylab="runoff (m3/s)", xlim=c(1,nlayers(debiet)))
@@ -15,7 +15,7 @@ testplot.storages <- function(res, debiet, poi){
     lines(facts[[i]][1,], col=cols[i], type='b')
   }
   lines(rep(0,12), col="black", type='l', lty=2)
-  legend("topleft", legend=c("1.0",0.5,0.7), col=c("red",cols), pch=1)
+  legend("topleft", legend=c("1.0",factors), col=c("red",cols), pch=1)
   title(paste(sprintf("Runoff at point %d, %d for factors", 
                       as.integer(poi@coords)[1], as.integer(poi@coords)[2]), 
               do.call(paste, c("1.0",factors,sep=", "))))
