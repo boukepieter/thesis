@@ -84,7 +84,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
                             channelLength=channelLength)
   writeRaster(head, filename="step/head.tif", format="GTiff", overwrite=TRUE)
   #head <- raster("step/head.tif")
-    
+  
   # hydro potential
   print("calculating potential...")
   runoffs <- lapply(runoffs, FUN=crop, y=head)
@@ -99,8 +99,8 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
     pot
   }
   potentials <- mapply(FUN=filter.fun, pot=potentials, deb=runoffs, 
-                 MoreArgs=list(head=head, minDeb=minimumDebiet, minHead=minimumHead),
-                 SIMPLIFY=FALSE)
+                       MoreArgs=list(head=head, minDeb=minimumDebiet, minHead=minimumHead),
+                       SIMPLIFY=FALSE)
   names <- list()
   for (i in 1:3){
     names[[i]] <- sprintf("output/potential%i_%02d.tif", i,seq(1:12))
@@ -130,7 +130,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   setwd("output")
   names <- lapply(1:3,FUN=function(x){sprintf("potential%i_%02d.tif", x, 1:noSteps)})
   mapply(writeRaster, potentials, names, MoreArgs=list(bylayer=TRUE, format="GTiff", 
-                                                           overwrite=TRUE))
+                                                       overwrite=TRUE))
   names <- lapply(1:3,FUN=function(x){sprintf("highPotential%i_%02d.tif", x, 1:noSteps)})
   mapply(writeRaster, highPotentials, names, MoreArgs=list(bylayer=TRUE, format="GTiff", 
                                                            overwrite=TRUE))

@@ -3,6 +3,8 @@ require(sp)
 require(raster)
 require(rgdal)
 
+#TODO(projection from input)
+
 getCatchment <- function(DEMfile, coord, work_env){
   rsaga.geoprocessor(lib="io_gdal", module=0,param=list(GRIDS=paste(getwd(),"step/DEM.sgrd",sep="/"), 
                                                         FILES=paste(getwd(), DEMfile,sep="/"), 
@@ -35,7 +37,7 @@ getCatchment <- function(DEMfile, coord, work_env){
   print("clipping on land")
   # Land clip
   rsaga.geoprocessor(lib="grid_calculus", module=1, 
-                     param=list(GRIDS=sprintf("%s/step/strahler7.sgrd;%s/step/DEM.sgrd", getwd(), getwd()), 
+                     param=list(GRIDS=sprintf("%s/step/strahler8.sgrd;%s/step/DEM.sgrd", getwd(), getwd()), 
                                 RESULT=sprintf("%s/step/strahlerLand.sgrd", getwd()),
                                 FORMULA="ifelse(g2>0,g1,-99999)"),
                      env=work_env, show.output.on.console = FALSE, warn = FALSE)
@@ -60,18 +62,16 @@ getCatchment <- function(DEMfile, coord, work_env){
   point <- SpatialPoints(coord, proj4string=wgs84)
   pointUTM <- spTransform(point, utm51)
   wsNumber <- extract(ws, pointUTM)
-
-  DEMsmall <- filledDEM
-  DEMsmall[ws[]!=wsNumber] <- NA
   rsaga.geoprocessor(lib="shapes_grid", module=6, 
                      param=list(GRID=sprintf("%s/step/basins.sgrd", getwd()), 
                                 POLYGONS=sprintf("%s/step/watershed.shp", getwd()), 
                                 CLASS_ALL="0", CLASS_ID=wsNumber),
                      env=work_env, show.output.on.console = FALSE, warn = FALSE)
   wsSHP <- readOGR("step", layer="watershed")
-  test <- crop(test, extent(wsSHP))
+  filledDEM <- raster("step/filledDEM.sdat") 
+  filledDEMsmall <- crop(filledDEM, extent(wsSHP))
   print("catchment clipping done")
-  return(test)
+  return(filledDEMsmall)
 }
 
 # TEST

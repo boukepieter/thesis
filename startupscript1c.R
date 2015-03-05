@@ -26,9 +26,9 @@ require(RSAGA)
 work_env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS") # windows
 
 # files
-setwd("/media/boukepieter/schijfje_ottow/thesis/workspace") # linux
+#setwd("/media/boukepieter/schijfje_ottow/thesis/workspace") # linux
 sourceCode <- "E:/thesis/workspace/thesis" # gaia windows
-setwd("E:/thesis/workspace1b")
+setwd("E:/thesis/testws")
 ETdir <- "input/ET"
 Pdir <- "input/P"
 DEMfile <- "input/DEM.tif"
@@ -39,7 +39,7 @@ file.copy(flist, paste(getwd(), "scripts", sep="/"))
 # model
 source("scripts/model1c.R")
 HydroPowerMonthly(DEMfile, Pdir, ETdir, coord=coord, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
-           minimumHead = minimumHead, channelLength = channelLength, work_env=work_env)
+           minimumHead = minimumHead, channelLength = channelLength, work_env=work_env, plotMethod="None")
 
 
 ####################################-Preprosessing-##################################################
