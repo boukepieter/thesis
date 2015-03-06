@@ -7,7 +7,7 @@ require(plyr)
 require(utils)
 
 HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, 
-                              splitSize = 200, includeSides = TRUE) {
+                              splitSize = 200, includeSides = TRUE, cores = 2) {
   #TODO(text)
   reso <- res(DEM)[1]
   cells <-  round(channelLength / reso)
@@ -81,7 +81,7 @@ HeadOnRiver.large <- function(DEM, debiet, channelLength = 500, minimumDebiet = 
   
   
   print("clusters made, starting calculations...")
-  cl <- makeCluster(4)  # Use 6 cores
+  cl <- makeCluster(cores)  # Use 6 cores
   registerDoParallel(cl) # register these 3 cores with the "foreach" package
   ##foreach(i=1:3) %dopar% sqrt(i)  #run a loop in parallel
   ##aaply(1:3, sqrt, .parallel=TRUE)  #apply a function across a vector in parallel

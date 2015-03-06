@@ -25,9 +25,16 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   ET <- stack(ETfiles[1:noSteps])
   P <- stack(Pfiles[1:noSteps])
   
-  # Fill and clip DEM:
-  source("scripts/watershed.R")
-  filledDEM <- getCatchment(DEMfile, coord, work_env)
+  # Fill DEM:
+  rsaga.geoprocessor(lib="io_gdal", module=0,param=list(GRIDS=paste(getwd(),"step/DEM.sgrd",sep="/"), 
+                                                        FILES=paste(getwd(), DEMfile,sep="/"), 
+                                                        TRANSFORM=TRUE, INTERPOL=1),
+                     env=work_env, show.output.on.console = FALSE, warn = FALSE)
+  print("filling DEM")
+  rsaga.geoprocessor(lib="ta_preprocessor", module=3, 
+                     param=list(DEM="step/DEM.sgrd", RESULT="step/filledDEM.sgrd", MINSLOPE=0.01),
+                     env=work_env, show.output.on.console = FALSE, warn = FALSE)
+  filledDEM <- raster("step/filledDEM.sdat")
   writeRaster(filledDEM, filename="step/filledDEM.tif", format="GTiff", overwrite=TRUE)
   rsaga.geoprocessor(lib="io_gdal", module=0,param=list(GRIDS=paste(getwd(),"step/filledDEM.sgrd",sep="/"), 
                                                         FILES=paste(getwd(), "step/filledDEM.tif",sep="/"), 
@@ -42,7 +49,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   for (i in 1:noSteps){
     writeRaster(runoffRes[[i]], filename=sprintf("step/runoffRes%02d.tif",i), format="GTiff", overwrite=TRUE)  
   }
-  
+  rm(P,ET)
   # Flow accumulation
   print("calculating flow accumulation...")
   for (i in 1:noSteps) {
@@ -68,20 +75,22 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   cellAcc <- stack(sprintf("step/cell_acc%02d.sdat", 1:noSteps))
   debiet <- calc(cellAcc, fun=function(x) x / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2)
   
+  rm(Presample,runoff, cellAcc)
   # Runoff delay scenarios
+  print("calculating runoff scenario's")
   source("scripts/runoffStorage.R")
   factors <- list(0.4,0.7)
   runoffs <- lapply(factors,FUN=storage.fun,debiet=debiet,noSteps=noSteps)
   poi <- SpatialPoints(matrix(c(737522.424973, 706557.393475),nrow=1),
                        proj4string=CRS(projection(debiet[[1]])))
-  testplot.storages(runoffs,debiet,poi, factors)
+  #testplot.storages(runoffs,debiet,poi, factors)
   runoffs <- c(debiet, runoffs)
   
   # head
   print("calculating head...")
   source("scripts/costrasters.R")
   head <- HeadOnRiver.large(filledDEM, max(debiet), minimumDebiet=minimumDebiet, 
-                            channelLength=channelLength)
+                            channelLength=channelLength,cores=6)
   writeRaster(head, filename="step/head.tif", format="GTiff", overwrite=TRUE)
   #head <- raster("step/head.tif")
   
@@ -93,6 +102,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   
   
   # filters
+  print("applying filters")
   filter.fun <- function(pot, deb, head, minDeb, minHead){
     pot[deb < minDeb] <- NA
     pot[head < minHead] <- NA
@@ -101,15 +111,12 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   potentials <- mapply(FUN=filter.fun, pot=potentials, deb=runoffs, 
                        MoreArgs=list(head=head, minDeb=minimumDebiet, minHead=minimumHead),
                        SIMPLIFY=FALSE)
-  names <- list()
-  for (i in 1:3){
-    names[[i]] <- sprintf("output/potential%i_%02d.tif", i,seq(1:12))
-    writeRaster(potentials[[i]], filename=names[[i]], 
-                bylayer=TRUE, format="GTiff", overwrite=TRUE)                
-  }
+  #names <- lapply(1:3,FUN=function(x){sprintf("output/potential%i_%02d.tif", x, 1:noSteps)})
+  #mapply(writeRaster, potentials, names, MoreArgs=list(bylayer=TRUE, format="GTiff", 
+  #                                                     overwrite=TRUE))
   #potentials <- lapply(X=names, FUN=stack)
   highPotentials <- potentials
-  
+  print("calculating high potentials")
   high.pot <- function(x){
     x[x < minimumPotential] <- NA
     return(x)
@@ -134,21 +141,21 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   names <- lapply(1:3,FUN=function(x){sprintf("highPotential%i_%02d.tif", x, 1:noSteps)})
   mapply(writeRaster, highPotentials, names, MoreArgs=list(bylayer=TRUE, format="GTiff", 
                                                            overwrite=TRUE))
-  writeRaster(debiet, filename=sprintf("../step/debiet%02d.tif", 1:noSteps),
-              bylayer=TRUE, format="GTiff", overwrite=TRUE)
+  #writeRaster(debiet, filename=sprintf("../step/debiet%02d.tif", 1:noSteps),
+  #            bylayer=TRUE, format="GTiff", overwrite=TRUE)
   
   # tot hierrrrr....
   # plot
-  names(potential) <- sprintf("potentialRaster%02d", seq(1,12))
-  names(highPotential) <- sprintf("potentialRaster%02d", seq(1,12))
-  if (plotMethod == "raster"){
-    PlotTimeRaster()
-  } else if (plotMethod == "vector"){
-    PlotTimeVector()
-  } else if (plotMethod == "both") {
-    PlotTimeRaster()
-    PlotTimeVector()
-  }
+#   names(potential) <- sprintf("potentialRaster%02d", seq(1,12))
+#   names(highPotential) <- sprintf("potentialRaster%02d", seq(1,12))
+#   if (plotMethod == "raster"){
+#     PlotTimeRaster()
+#   } else if (plotMethod == "vector"){
+#     PlotTimeVector()
+#   } else if (plotMethod == "both") {
+#     PlotTimeRaster()
+#     PlotTimeVector()
+#   }
   
   
 }

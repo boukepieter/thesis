@@ -81,7 +81,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   print("calculating head...")
   source("scripts/costrasters.R")
   head <- HeadOnRiver.large(filledDEM, max(debiet), minimumDebiet=minimumDebiet, 
-                            channelLength=channelLength)
+                            channelLength=channelLength, cores=6)
   writeRaster(head, filename="step/head.tif", format="GTiff", overwrite=TRUE)
   #head <- raster("step/head.tif")
     
