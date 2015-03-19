@@ -38,3 +38,49 @@ for (i in 151:200){
   newDEM <- clippedDEM + raster(DEM.sim2[i-150])
   writeRaster(newDEM,sprintf("pos_DEMs/DEM%03d.tif",i),format="GTiff", overwrite=T)
 }
+
+setwd("E:/thesis/workspace/MCAnalyse")
+noSteps <- 12
+get.suitables <- function(nr) {
+  names <- lapply(1:3,FUN=function(x){sprintf("run%03d/output/highPotential%i_%02d.tif", nr, x, 1:noSteps)})
+  highPotentials <- lapply(X=names, FUN=stack)
+  suitable <- lapply(highPotentials, FUN=reclassify, c(-1,9999,0,10000,Inf,1))
+  suitnr <- mapply(FUN=calc, suitable, MoreArgs=list(fun=sum, na.rm=T))
+  suit <- lapply(suitnr, FUN=reclassify, c(-1,9,0,9,12,1))
+  suitables <- stack(suit)
+}
+get.suitables <- function(nr, aggregate=0) {
+  names <- lapply(1:3,FUN=function(x){sprintf("run%03d/output/highPotential%i_%02d.tif", nr, x, 1:noSteps)})
+  highPotentials <- lapply(X=names, FUN=stack)
+  suitable <- lapply(highPotentials, FUN=reclassify, c(-1,9999,0,10000,Inf,1))
+  suitnr <- mapply(FUN=calc, suitable, MoreArgs=list(fun=sum, na.rm=T))
+  suit <- lapply(suitnr, FUN=reclassify, c(-1,9,0,9,12,1))
+  if (aggregate > 0) {suit <- lapply(suit, FUN=aggregate, aggregate, max)}
+  suitables <- stack(suit)
+}
+suitables <- get.suitables(101)
+for (i in 102:200) {
+  suitables2 <- get.suitables(i)
+  suitables <- suitables + suitables2
+  print(i)
+}
+writeRaster(suitables, c("suitables11.tif", "suitables22.tif", "suitables33.tif"), 
+            bylayer=TRUE, format="GTiff", overwrite=TRUE)
+suitables <- get.suitables(101, 10)
+for (i in 102:200) {
+  suitables2 <- get.suitables(i, 10)
+  suitables <- suitables + suitables2
+  print(i)
+}
+writeRaster(suitables, c("suitables11Aggr.tif", "suitables22Aggr.tif", "suitables33Aggr.tif"), 
+            bylayer=TRUE, format="GTiff", overwrite=TRUE)
+suitables <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
+library(plotKML)
+plotKML(suitables[[2]])
+suitables[[3]][suitables[[3]] < 1] <- NA
+plotKML(suitables[[3]])
+
+suitables100 <- raster("suitables1.tif")
+suitables200 <- raster("suitables11.tif")
+diff <- suitables200 - suitables100
+plot(diff)

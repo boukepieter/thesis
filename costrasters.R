@@ -136,7 +136,7 @@ HeadOnRiver <- function(DEM, debiet, channelLength = 500, minimumDebiet = 0.1, i
   head <- DEM
   head[] <- 0
   names(head) <- "Head"
-  oldperc <- 0
+  #oldperc <- 0
   
   df <- data.frame(value=debiet[], nr=1:ncell(debiet))
   df <- df[!is.na(df["value"]),]

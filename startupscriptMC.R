@@ -42,8 +42,8 @@ file.copy(flist, paste(getwd(), "scripts", sep="/"))
 
 # model
 source("scripts/MCmodel.R")
-HydroPowerMonthly(DEMfile, Pdir, ETdir, coord=coord, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
-           minimumHead = minimumHead, channelLength = channelLength, work_env=work_env, plotMethod="None")
+#HydroPowerMonthly(DEMfile, Pdir, ETdir, coord=coord, minimumPotential = minimumPotential, minimumDebiet = minimumDebiet,
+#           minimumHead = minimumHead, channelLength = channelLength, work_env=work_env, plotMethod="None")
 
 for (i in 1:20){
   setwd("D:/MCAnalyse")

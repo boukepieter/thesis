@@ -46,8 +46,8 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   # Flow accumulation
   print("calculating flow accumulation...")
   for (i in 1:noSteps) {
-    rsaga.geoprocessor(lib="io_gdal", module=0,param=list(GRIDS=paste(getwd(),sprintf("step/runoffRes%02d.tif",i),sep="/"), # moet zonder getwd kunnen
-                                                          FILES=paste(getwd(),sprintf("step/runoffRes%02d.tif",i),sep="/"), 
+    rsaga.geoprocessor(lib="io_gdal", module=0,param=list(GRIDS=sprintf("step/runoffRes%02d.sgrd",i), 
+                                                          FILES=sprintf("step/runoffRes%02d.tif",i), 
                                                           TRANSFORM=TRUE, INTERPOL=1),
                        env=work_env, show.output.on.console = FALSE, warn = FALSE)
     file.copy(c("step/filledDEM.sgrd", "step/filledDEM.sdat", "step/filledDEM.prj", "step/filledDEM.mgrd"),
@@ -72,9 +72,9 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   source("scripts/runoffStorage.R")
   factors <- list(0.4,0.7)
   runoffs <- lapply(factors,FUN=storage.fun,debiet=debiet,noSteps=noSteps)
-  poi <- SpatialPoints(matrix(c(737522.424973, 706557.393475),nrow=1),
-                       proj4string=CRS(projection(debiet[[1]])))
-  testplot.storages(runoffs,debiet,poi, factors)
+  #poi <- SpatialPoints(matrix(c(737522.424973, 706557.393475),nrow=1),
+  #                     proj4string=CRS(projection(debiet[[1]])))
+  #testplot.storages(runoffs,debiet,poi, factors)
   runoffs <- c(debiet, runoffs)
   
   # head
@@ -88,25 +88,22 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   # hydro potential
   print("calculating potential...")
   runoffs <- lapply(runoffs, FUN=crop, y=head)
+  head[head < minHead] <- NA
   potentials <- lapply(runoffs, FUN=function(x, head) {x * head * 9.81 * 1000}, head=head) # Joule / second
   
   
-  
   # filters
-  filter.fun <- function(pot, deb, head, minDeb, minHead){
-    pot[deb < minDeb] <- NA
-    pot[head < minHead] <- NA
-    pot
-  }
-  potentials <- mapply(FUN=filter.fun, pot=potentials, deb=runoffs, 
-                 MoreArgs=list(head=head, minDeb=minimumDebiet, minHead=minimumHead),
-                 SIMPLIFY=FALSE)
-  names <- list()
-  for (i in 1:3){
-    names[[i]] <- sprintf("output/potential%i_%02d.tif", i,seq(1:12))
-    writeRaster(potentials[[i]], filename=names[[i]], 
-                bylayer=TRUE, format="GTiff", overwrite=TRUE)                
-  }
+#   filter.fun <- function(pot, deb, head, minDeb, minHead){
+#     pot[deb < minDeb] <- NA
+#     pot[head < minHead] <- NA
+#     pot
+#   }
+#   potentials <- mapply(FUN=filter.fun, pot=potentials, deb=runoffs, 
+#                  MoreArgs=list(head=head, minDeb=minimumDebiet, minHead=minimumHead),
+#                  SIMPLIFY=FALSE)
+  #names <- lapply(1:3,FUN=function(x){sprintf("output/potential%i_%02d.tif", x, 1:noSteps)})
+  #mapply(writeRaster, potentials, names, MoreArgs=list(bylayer=TRUE, format="GTiff", 
+  #                                                     overwrite=TRUE))
   #potentials <- lapply(X=names, FUN=stack)
   highPotentials <- potentials
   
