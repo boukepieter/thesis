@@ -9,6 +9,7 @@ resetPar <- function() {
   op
 }
 
+wgs84 = CRS('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 cols <- rev(brewer.pal(11,"Spectral")[c(1,2,3,4,5,8,9,10,11)])
 brks <- c(10000,20000,50000,100000,200000,400000,750000,1500000,3000000)
 nms <- c(">10 kW", ">20 kW", ">50 kW", ">100 kW", ">200 kW", ">400 kW", ">750 kW", ">1.5 MW", ">3.0 MW")
@@ -27,7 +28,6 @@ legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 setwd("E:/thesis/workspace/results/1a")
 highPotential <- raster("output/highPotential.tif")
 cr <- crop(highPotential, extent(c(736002, 744138, 700691, 709433)))
-wgs84 = CRS('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 crwgs <- projectRaster(cr, crs=wgs84)
 mymap <- gmap(crwgs, type='satellite',rgb=T, lonlat=T, zoom=12)
 plot(crwgs, main="Potential in Watt with increased spatial resolution",
@@ -137,3 +137,20 @@ title(paste(sprintf("Runoff at point %d, %d for storage factors",
                     as.integer(poi@coords)[1], as.integer(poi@coords)[2]), 
             paste("1.0", "0.7", "0.4",sep=", ")))
 
+### QA file
+num <- raster("E:/thesis/data/dem/ASTGTM2_N06E125/ASTGTM2_N06E125_num.tif")
+shed <- readOGR(dsn="E:/thesis/workspace1b/step/watershed.shp", layer="watershed")
+shed <- spTransform(shed, wgs84)
+num <- crop(num,shed)
+numM <- mask(num,shed)
+plot(numM, col=c("red","yellow","lightgreen","darkgreen"), breaks=c(-1.1,0.1,2.1,5.1,10.1),
+     legend=F, main="QA of ASTER GDEM for the study area")
+legend("bottomleft", legend = c("-1","1-2","3-5","6-10"), 
+       fill = c("red","yellow","lightgreen","darkgreen"))
+plot(shed, add=T)
+
+his <- hist(numM, main="QA of ASTER GDEM for the study area", ylim=c(0,0.17),
+     breaks=seq(-2,11), xlim=c(-1.6,9.6), freq=F, col="lightblue", labels=T, axes=F)
+axis(1, at=his$mids,labels=(as.character(-1:11)))
+axis(2)
+?hist
