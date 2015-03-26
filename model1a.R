@@ -63,7 +63,7 @@ debiet <- cellAcc / 1000 / 24 / 3600 * res(cellAcc)[1] ^ 2
 
 # head
 print("calculating head...")
-source("costrasters.R")
+source("scripts/costrasters.R")
 head <- HeadOnRiver.large(filledDEM, debiet, minimumDebiet=minimumDebiet, 
                     channelLength=channelLength)
 
