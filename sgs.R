@@ -80,7 +80,26 @@ plotKML(suitables[[2]])
 suitables[[3]][suitables[[3]] < 1] <- NA
 plotKML(suitables[[3]])
 
-suitables100 <- raster("suitables1.tif")
-suitables200 <- raster("suitables11.tif")
+### analyzes
+suitables1 <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
+suitables2 <- stack(c("suitables11.tif", "suitables22.tif", "suitables33.tif"))
 diff <- suitables200 - suitables100
 plot(diff)
+
+suitables3 <- (suitables1+suitables2) / 2
+writeRaster(suitables3, c("suitables111.tif", "suitables222.tif", "suitables333.tif"), 
+            bylayer=TRUE, format="GTiff", overwrite=TRUE)
+
+plot(x=suitables1[[2]][], y=suitables2[[2]][], pch=20, col=rgb(0,0,0,0.05))
+lines(x=0:70, y=0:70)
+
+suitables1a <- stack(c("suitables1Aggr.tif", "suitables2Aggr.tif", "suitables3Aggr.tif"))
+suitables2a <- stack(c("suitables11Aggr.tif", "suitables22Aggr.tif", "suitables33Aggr.tif"))
+diff <- suitables2a - suitables1a
+plot(diff)
+plot(x=suitables1a[[2]][], y=suitables2a[[2]][], pch=20, col=rgb(0,0,0,0.1))
+lines(x=0:100, y=0:100)
+
+suitables3a <- (suitables1a+suitables2a) / 2
+writeRaster(suitables3a, c("suitables111Aggr.tif", "suitables222Aggr.tif", "suitables333Aggr.tif"), 
+            bylayer=TRUE, format="GTiff", overwrite=TRUE)
