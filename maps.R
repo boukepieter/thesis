@@ -1,6 +1,7 @@
 require(raster)
 require(RColorBrewer)
 library(dismo)
+library(plotrix)
 
 resetPar <- function() {
   dev.new()
@@ -13,10 +14,11 @@ wgs84 = CRS('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 cols <- rev(brewer.pal(11,"Spectral")[c(1,2,3,4,5,8,9,10,11)])
 brks <- c(10000,20000,50000,100000,200000,400000,750000,1500000,3000000)
 nms <- c(">10 kW", ">20 kW", ">50 kW", ">100 kW", ">200 kW", ">400 kW", ">750 kW", ">1.5 MW", ">3.0 MW")
-mymap <- gmap(crwgs, type='satellite',rgb=T, lonlat=T, zoom=12)
 ext <- c(736411, 741789, 704418,707888)
+mymap <- gmap(crwgs, type='satellite',rgb=T, lonlat=T, zoom=12)
 months <- c("January", "February", "March", "April", "May", "June", "July", "August",
             "September", "October", "November", "December")
+scenarios <- c("0.0", "0.6", "0.3")
 
 ### testPLOT
 
@@ -86,6 +88,40 @@ for (i in 1:12){
   dev.off()
 }
 
+mar <- matrix(c(1,3,2,4,6,5),nrow=3)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/costMonthlyA.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+for (i in 1:6){
+  print(i)
+  cr <- crop(res[[1]][[i]], extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84)
+  plot(crwgs, main=sprintf("Potential for %s", months[i]),
+       col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
+       xlim=ext[1:2], ylim=ext[3:4], legend=F)
+  plotRGB(mymap, alpha=150, add=T)
+  plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+  #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
+}
+dev.off()
+png(sprintf("E:/thesis/reports/Thesis_report/figures/costMonthlyB.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+for (i in 7:12){
+  print(i)
+  cr <- crop(res[[1]][[i]], extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84)
+  plot(crwgs, main=sprintf("Potential for %s", months[i]),
+       col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
+       xlim=ext[1:2], ylim=ext[3:4], legend=F)
+  plotRGB(mymap, alpha=150, add=T)
+  plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+  #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
+}
+dev.off()
+
 ### Scenario's
 for (i in 1:12){
   cr <- crop(res[[2]][[i]], extent(ext))
@@ -115,11 +151,43 @@ for (i in 1:12){
   text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
   dev.off()
 }
-
+for (j in 2:3){
+  mar <- matrix(c(1,3,2,4,6,5),nrow=3)
+  png(sprintf("E:/thesis/reports/Thesis_report/figures/scenarios%dA.png", j),
+      width = 2*783, height = 3*513, units = "px", pointsize = 16)
+  layout(mar)
+  for (i in 1:6){
+    cr <- crop(res[[j]][[i]], extent(ext))
+    crwgs <- projectRaster(cr, crs=wgs84)
+    plot(crwgs, main=sprintf("Potential for %s with storage factor %s", months[i], scenarios[j]),
+         col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
+         xlim=ext[1:2], ylim=ext[3:4], legend=F)
+    plotRGB(mymap, alpha=150, add=T)
+    plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+    #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+    text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
+  }
+  dev.off()
+  png(sprintf("E:/thesis/reports/Thesis_report/figures/scenarios%dB.png", j),
+      width = 2*783, height = 3*513, units = "px", pointsize = 16)
+  layout(mar)
+  for (i in 7:12){
+    cr <- crop(res[[j]][[i]], extent(ext))
+    crwgs <- projectRaster(cr, crs=wgs84)
+    plot(crwgs, main=sprintf("Potential for %s with storage factor %s", months[i], scenarios[j]),
+         col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
+         xlim=ext[1:2], ylim=ext[3:4], legend=F)
+    plotRGB(mymap, alpha=150, add=T)
+    plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+    #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+    text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
+  }
+  dev.off()
+}
 ### LINE for one point
 
 poi <- SpatialPoints(matrix(c(740259.159884, 706064.023617),nrow=1),
-                                          proj4string=CRS(projection(res[[1]])))
+                     proj4string=CRS(projection(res[[1]])))
 nul <- extract(res[[1]],poi)
 facts <- lapply(res,FUN=extract,y=poi)
 for (i in 1:3){
@@ -150,7 +218,239 @@ legend("bottomleft", legend = c("-1","1-2","3-5","6-10"),
 plot(shed, add=T)
 
 his <- hist(numM, main="QA of ASTER GDEM for the study area", ylim=c(0,0.17),
-     breaks=seq(-2,11), xlim=c(-1.6,9.6), freq=F, col="lightblue", labels=T, axes=F)
+            breaks=seq(-2,11), xlim=c(-1.6,9.6), freq=F, col="lightblue", labels=T, axes=F)
 axis(1, at=his$mids,labels=(as.character(-1:11)))
 axis(2)
 ?hist
+
+### Error Prop non aggr
+setwd("E:/thesis/workspace/MCAnalyse")
+suitables1 <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
+suitables2 <- stack(c("suitables11.tif", "suitables22.tif", "suitables33.tif"))
+suitables3 <- stack(c("suitables111.tif", "suitables222.tif", "suitables333.tif"))
+suitables <- list(suitables1, suitables2, suitables3)
+
+for (j in 1:3){
+  for (i in 1:3){
+    cr <- crop(suitables[[j]][[i]], extent(ext))
+    crwgs <- projectRaster(cr, crs=wgs84, method='ngb')
+    crwgs[crwgs==0] <- NA
+    png(sprintf("E:/thesis/reports/Thesis_report/figures/errorprop%d_%d.png", j, i),
+        width = 783, height = 513, units = "px", pointsize = 16)
+    plot(crwgs, main=sprintf("Percentage for scenario factor %s storage", scenarios[i]),
+         zlim=c(0,50),
+         xlim=ext[1:2], ylim=ext[3:4])
+    plotRGB(mymap, alpha=150, add=T)
+    plot(crwgs, add=T, legend=F, zlim=c(0,50))
+    text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
+    dev.off()
+  }}
+
+mar <- matrix(c(1,3,2,4,6,5),nrow=3)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/errorprop_12.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+j <- rbind(c(1,1),c(2,1),c(1,3),c(2,3),c(1,2),c(2,2))
+for (i in 1:6){
+  print(j[i])
+  cr <- crop(suitables[[j[i,1]]][[j[i,2]]], extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84, method='ngb')
+  crwgs[crwgs==0] <- NA
+  plot(crwgs, main=sprintf("Percentage for scenario factor %s storage", scenarios[j[i,2]]),
+       zlim=c(0,50), legend=F, cex.main=2.0, cex.axis=2.0,
+       xlim=ext[1:2], ylim=ext[3:4])
+  plotRGB(mymap, alpha=150, add=T)
+  plot(crwgs, add=T, legend=F, zlim=c(0,50))
+  text(x=125.184, y=6.3673, labels="background: GoogleMaps", cex=1.0)
+}
+dev.off()
+
+plot(crwgs, main="",
+     zlim=c(0,0),
+     xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
+color.legend(125.135,6.38,125.185,6.384, legend=paste(seq(0,50,10),"%"), rect.col=rev(terrain.colors(6)), 
+             gradient="x", cex=1)
+
+### Error Prop aggr
+setwd("E:/thesis/workspace/MCAnalyse")
+suitables1 <- stack(c("suitables1Aggr.tif", "suitables2Aggr.tif", "suitables3Aggr.tif"))
+suitables2 <- stack(c("suitables11Aggr.tif", "suitables22Aggr.tif", "suitables33Aggr.tif"))
+suitables3 <- stack(c("suitables111Aggr.tif", "suitables222Aggr.tif", "suitables333Aggr.tif"))
+suitables <- list(suitables1, suitables2, suitables3)
+z<-100
+
+for (j in 1:3){
+  for (i in 1:3){
+    cr <- crop(suitables[[j]][[i]], extent(ext))
+    crwgs <- projectRaster(cr, crs=wgs84, method='ngb')
+    crwgs[crwgs==0] <- NA
+    png(sprintf("E:/thesis/reports/Thesis_report/figures/errorprop%d_%dAggr.png", j, i),
+        width = 783, height = 513, units = "px", pointsize = 16)
+    plot(crwgs, main=sprintf("Percentage for scenario factor %s storage", scenarios[i]),
+         zlim=c(0,50),
+         xlim=ext[1:2], ylim=ext[3:4])
+    plotRGB(mymap, alpha=150, add=T)
+    plot(crwgs, add=T, legend=F, zlim=c(0,z))
+    text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
+    dev.off()
+  }}
+
+mar <- matrix(c(1,3,2,4,6,5),nrow=3)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/errorpropAggr_12.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+j <- rbind(c(1,1),c(2,1),c(1,3),c(2,3),c(1,2),c(2,2))
+for (i in 1:6){
+  print(j[i])
+  par(c(0,0,0,500))
+  cr <- crop(suitables[[j[i,1]]][[j[i,2]]], extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84, method='ngb')
+  crwgs[crwgs==0] <- NA
+  plot(crwgs, main=sprintf("Percentage for scenario factor %s storage aggregated", scenarios[j[i,2]]),
+       zlim=c(0,z), cex.axis=2.0, cex.main=2,
+       xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
+  plotRGB(mymap, alpha=150, add=T)
+  plot(crwgs, add=T, legend=F, zlim=c(0,z))
+  text(x=125.184, y=6.366, labels="background: GoogleMaps", cex=1.0)
+  
+}
+dev.off()
+
+plot(crwgs, main="",
+     zlim=c(0,0),
+     xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
+color.legend(125.135,6.38,125.185,6.384, legend=paste(seq(0,100,20),"%"), rect.col=rev(terrain.colors(6)), 
+             gradient="x", cex=1)
+
+### Error Prop combined
+setwd("E:/thesis/workspace/MCAnalyse")
+suitables3Aggr <- stack(c("suitables111Aggr.tif", "suitables222Aggr.tif", "suitables333Aggr.tif"))
+suitables3 <- stack(c("suitables111.tif", "suitables222.tif", "suitables333.tif"))
+suitables <- list(suitables3, suitables3Aggr)
+z<-100
+
+mar <- matrix(c(1,3,2,4,6,5),nrow=3)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/errorpropTotals.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+j <- rbind(c(1,1),c(2,1),c(1,3),c(2,3),c(1,2),c(2,2))
+for (i in 1:6){
+  print(j[i])
+  par(c(0,0,0,500))
+  cr <- crop(suitables[[j[i,1]]][[j[i,2]]], extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84, method='ngb')
+  crwgs[crwgs==0] <- NA
+  plot(crwgs, main=sprintf("Percentage for scenario factor %s storage total", scenarios[j[i,2]]),
+       zlim=c(0,z), cex.axis=2.0, cex.main=2,
+       xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
+  plotRGB(mymap, alpha=150, add=T)
+  plot(crwgs, add=T, legend=F, zlim=c(0,z))
+  if (i%%2==1){
+    text(x=125.184, y=6.3673, labels="background: GoogleMaps", cex=1.0)
+  }
+  else{
+    text(x=125.184, y=6.366, labels="background: GoogleMaps", cex=1.0)
+  }
+  
+}
+dev.off()
+
+plot(crwgs, main="",
+     zlim=c(0,0),
+     xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
+color.legend(125.135,6.38,125.185,6.384, legend=paste(seq(0,100,20),"%"), rect.col=rev(terrain.colors(6)), 
+             gradient="x", cex=1)
+
+### Scatterplot
+setwd("E:/thesis/workspace/MCAnalyse")
+suitables1 <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
+suitables2 <- stack(c("suitables11.tif", "suitables22.tif", "suitables33.tif"))
+suitables3 <- stack(c("suitables111.tif", "suitables222.tif", "suitables333.tif"))
+
+mar <- matrix(c(1,2,3,0),nrow=2,byrow=T)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/scatterplot2.png"),
+    width = 2*783, height = 2*513, units = "px", pointsize = 16)
+layout(mar)
+j <- c(50,7)
+for( i in c(1,3,2)){
+  plot(x=suitables1[[i]][], y=suitables2[[i]][], pch=20, col=rgb(0,0,0,0.05),
+       xlab="first hundred runs", ylab="second hundred runs", 
+       main=sprintf("Scatterplot of the results of the Monte Carlo analysis 
+                    for the factor %s storage scenario", scenarios[i]))
+  lines(x=0:70, y=0:70)
+}
+dev.off()
+
+### mean and percentiles
+mar <- matrix(c(1,2,3,4,5,6),nrow=3)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/meanetc.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+
+setwd("E:/thesis/workspace/MCAnalyse")
+res <- raster("mean.tif")
+crwgs <- projectRaster(res, crs=wgs84)
+plot(crwgs, main="Mean potential of all the Monte Carlo runs",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+
+point <- readOGR(dsn="E:/thesis/data", layer="Inlet")
+plot(point,add=T, pch=20, cex=2)
+plot(point,add=T, cex=2)
+
+res <- raster("mean27.tif")
+crwgs <- projectRaster(res, crs=wgs84)
+plot(crwgs, main="Mean potential of 27th Monte Carlo run",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+
+res <- raster("Q05.tif")
+crwgs <- projectRaster(res, crs=wgs84)
+plot(crwgs, main="5 percentile of all the Monte Carlo runs",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+
+res <- raster("mean92.tif")
+crwgs <- projectRaster(res, crs=wgs84)
+plot(crwgs, main="Mean potential of 92nd Monte Carlo run",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+
+res <- raster("Q95.tif")
+crwgs <- projectRaster(res, crs=wgs84)
+plot(crwgs, main="95 percentile of all the Monte Carlo runs",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+
+res <- raster("mean150.tif")
+crwgs <- projectRaster(res, crs=wgs84)
+plot(crwgs, main="Mean potential of 150th Monte Carlo run",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+
+
+dev.off()

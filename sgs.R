@@ -58,12 +58,32 @@ get.suitables <- function(nr, aggregate=0) {
   if (aggregate > 0) {suit <- lapply(suit, FUN=aggregate, aggregate, max)}
   suitables <- stack(suit)
 }
-suitables <- get.suitables(101)
-for (i in 102:200) {
-  suitables2 <- get.suitables(i)
-  suitables <- suitables + suitables2
+ext <- c(736411, 741789, 704418,707888)
+get.mean <- function(nr, aggregate=0) {
+  names <- lapply(1,FUN=function(x){sprintf("run%03d/output/potential%i_%02d.tif", nr, x, 1:12)})
+  potentials <- lapply(X=names, FUN=stack)
+  test <- crop(potentials[[1]], extent(ext))
+  test[is.na(test)] <- 0
+  means <- mean(test, na.rm=T)
+  if (aggregate > 0) {means <- aggregate(means, aggregate, max)}
+  means
+}
+means <- get.mean(1)
+for (i in 2:200) {
+  means2 <- get.mean(i)
+  means <- stack(means, means2)
   print(i)
 }
+mean <- mean(means)
+Q95 <- calc(means, fun = function(x) {quantile(x,probs = c(.05,.95))} )
+
+writeRaster(mean, "mean2.tif", format="GTiff", overwrite=T)
+writeRaster(Q95[[1]], "Q052.tif", format="GTiff", overwrite=T)
+writeRaster(Q95[[2]], "Q952.tif", format="GTiff", overwrite=T)
+writeRaster(means[[27]], "mean272.tif", format="GTiff", overwrite=T)
+writeRaster(means[[92]], "mean922.tif", format="GTiff", overwrite=T)
+writeRaster(means[[150]], "mean1502.tif", format="GTiff", overwrite=T)
+
 writeRaster(suitables, c("suitables11.tif", "suitables22.tif", "suitables33.tif"), 
             bylayer=TRUE, format="GTiff", overwrite=TRUE)
 suitables <- get.suitables(101, 10)
@@ -80,9 +100,11 @@ plotKML(suitables[[2]])
 suitables[[3]][suitables[[3]] < 1] <- NA
 plotKML(suitables[[3]])
 
-### analyzes
+### analysis
+setwd("E:/thesis/workspace/MCAnalyse")
 suitables1 <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
 suitables2 <- stack(c("suitables11.tif", "suitables22.tif", "suitables33.tif"))
+suitables3 <- stack(c("suitables111.tif", "suitables222.tif", "suitables333.tif"))
 diff <- suitables200 - suitables100
 plot(diff)
 
@@ -90,7 +112,9 @@ suitables3 <- (suitables1+suitables2) / 2
 writeRaster(suitables3, c("suitables111.tif", "suitables222.tif", "suitables333.tif"), 
             bylayer=TRUE, format="GTiff", overwrite=TRUE)
 
-plot(x=suitables1[[2]][], y=suitables2[[2]][], pch=20, col=rgb(0,0,0,0.05))
+plot(x=suitables1[[2]][], y=suitables2[[2]][], pch=20, col=rgb(0,0,0,0.05),
+     xlab="first hundred runs", ylab="second hundred runs", 
+     main="Scatterplot of the results of the Monte Carlo analysis")
 lines(x=0:70, y=0:70)
 
 suitables1a <- stack(c("suitables1Aggr.tif", "suitables2Aggr.tif", "suitables3Aggr.tif"))
