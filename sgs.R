@@ -80,9 +80,10 @@ plotKML(suitables[[2]])
 suitables[[3]][suitables[[3]] < 1] <- NA
 plotKML(suitables[[3]])
 
-### analyzes
+### analysis
 suitables1 <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
 suitables2 <- stack(c("suitables11.tif", "suitables22.tif", "suitables33.tif"))
+suitables3 <- stack(c("suitables111.tif", "suitables222.tif", "suitables333.tif"))
 diff <- suitables200 - suitables100
 plot(diff)
 
