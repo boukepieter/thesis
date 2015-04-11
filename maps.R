@@ -360,6 +360,7 @@ plot(crwgs, main="",
      xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
 color.legend(125.135,6.38,125.185,6.384, legend=paste(seq(0,100,20),"%"), rect.col=rev(terrain.colors(6)), 
              gradient="x", cex=1)
+<<<<<<< HEAD
 
 ### Scatterplot
 setwd("E:/thesis/workspace/MCAnalyse")
@@ -454,3 +455,5 @@ text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
 
 
 dev.off()
+=======
+>>>>>>> c05644c3769c0c3efd9c7c8cc78c1a7d6f0ddb42

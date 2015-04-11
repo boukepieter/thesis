@@ -101,7 +101,10 @@ suitables[[3]][suitables[[3]] < 1] <- NA
 plotKML(suitables[[3]])
 
 ### analysis
+<<<<<<< HEAD
 setwd("E:/thesis/workspace/MCAnalyse")
+=======
+>>>>>>> c05644c3769c0c3efd9c7c8cc78c1a7d6f0ddb42
 suitables1 <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
 suitables2 <- stack(c("suitables11.tif", "suitables22.tif", "suitables33.tif"))
 suitables3 <- stack(c("suitables111.tif", "suitables222.tif", "suitables333.tif"))
