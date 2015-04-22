@@ -455,5 +455,30 @@ text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
 
 
 dev.off()
-=======
->>>>>>> c05644c3769c0c3efd9c7c8cc78c1a7d6f0ddb42
+
+
+#Comparison
+res <- means2
+high <- 8
+cr <- crop(res, extent(ext))
+crwgs <- projectRaster(cr, crs=wgs84)
+plot(crwgs, main="Mean potential with planned location",
+     col=cols, breaks=brks,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+inlet <- readOG
+text(x=125.180, y=6.368, labels="background: GoogleMaps", cex=0.7)
+
+point <- readOGR(dsn="E:/thesis/data", layer="Inlet")
+plot(point,add=T, pch=19,cex=2, col='red')
+plot(point,add=T, cex=2)
+
+res3 <- resample(res, cr, na.rm=T, method="max")
+res3 <- aggregate(res, 3, na.rm=T, fun="max")
+plot(res3)
+res3 <- res - cr
+head <- raster("E:/thesis/workspace1b/step/head.tif")
+library(plotKML)
+plotKML(head)

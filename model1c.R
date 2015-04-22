@@ -2,7 +2,7 @@
 
 ################################# Model starts ############################################
 HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir = "input/ET", coord,
-                              channelLength = 500, minimumHead = 25, minimumDebiet = 0.1, minimumPotential = 100000,
+                              channelLength = 500, minimumHead = 25, minimumDebiet = 0.1, minimumPotential = 10000,
                               plotToGE = TRUE, work_env = "", plotMethod = "raster") {
   # load in input and packages
   require(raster)
@@ -88,7 +88,7 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   # hydro potential
   print("calculating potential...")
   runoffs <- lapply(runoffs, FUN=crop, y=head)
-  head[head < minHead] <- NA
+  head[head < minimumHead] <- NA
   potentials <- lapply(runoffs, FUN=function(x, head) {x * head * 9.81 * 1000}, head=head) # Joule / second
   
   

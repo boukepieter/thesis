@@ -130,3 +130,19 @@ lines(x=0:100, y=0:100)
 suitables3a <- (suitables1a+suitables2a) / 2
 writeRaster(suitables3a, c("suitables111Aggr.tif", "suitables222Aggr.tif", "suitables333Aggr.tif"), 
             bylayer=TRUE, format="GTiff", overwrite=TRUE)
+
+
+#====================================================================================================
+names <- lapply(1:3,FUN=function(x){sprintf("output/highPotential%i_%02d.tif", x, 1:noSteps)})
+highPotentials <- lapply(X=names, FUN=stack)
+suitable <- lapply(highPotentials, FUN=reclassify, c(-1,9999,0,10000,Inf,1))
+suitnr <- mapply(FUN=calc, suitable, MoreArgs=list(fun=sum, na.rm=T))
+suit <- lapply(suitnr, FUN=reclassify, c(-1,9,0,9,12,1))
+if (aggregate > 0) {suit <- lapply(suit, FUN=aggregate, 10, max)}
+suitablesAggr <- stack(suit)
+plot(suitablesAggr)
+plot(means)
+means[means==0] <- NA
+potentials <- lapply(X=names, FUN=stack)
+test <- crop(potentials[[1]], extent(ext))
+means <- mean(test, na.rm=T)
