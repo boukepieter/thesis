@@ -20,8 +20,8 @@ install.packages("plotKML")
 channelLength = 500
 minimumHead = 25
 minimumDebiet = 0.1
-minimumPotential = 100000
-coord <- matrix(c(125.175278, 6.383889), nrow=1)
+minimumPotential = 10000
+coord <- matrix(c(125.175041, 6.382055), nrow=1) #  125.175278, 6.383889
 require(RSAGA)
 work_env = rsaga.env(path="C:/Program Files (x86)/SAGA_GIS") # windows
 

@@ -101,10 +101,7 @@ suitables[[3]][suitables[[3]] < 1] <- NA
 plotKML(suitables[[3]])
 
 ### analysis
-<<<<<<< HEAD
 setwd("E:/thesis/workspace/MCAnalyse")
-=======
->>>>>>> c05644c3769c0c3efd9c7c8cc78c1a7d6f0ddb42
 suitables1 <- stack(c("suitables1.tif", "suitables2.tif", "suitables3.tif"))
 suitables2 <- stack(c("suitables11.tif", "suitables22.tif", "suitables33.tif"))
 suitables3 <- stack(c("suitables111.tif", "suitables222.tif", "suitables333.tif"))
@@ -115,10 +112,11 @@ suitables3 <- (suitables1+suitables2) / 2
 writeRaster(suitables3, c("suitables111.tif", "suitables222.tif", "suitables333.tif"), 
             bylayer=TRUE, format="GTiff", overwrite=TRUE)
 
-plot(x=suitables1[[2]][], y=suitables2[[2]][], pch=20, col=rgb(0,0,0,0.05),
-     xlab="first hundred runs", ylab="second hundred runs", 
-     main="Scatterplot of the results of the Monte Carlo analysis")
-lines(x=0:70, y=0:70)
+plot(x=suitables1[[2]][]/100, y=suitables2[[2]][]/100, pch=20, col=rgb(0,0,0,0.05),
+     xlab="first MC simulation", ylab="second MC simulation", xlim=c(0,0.7), ylim=c(0,0.7),asp=1,
+     main="Scatterplot of the results of the Monte Carlo analyses")
+lines(x=seq(0,0.70,by=0.01), y=seq(0,0.70,by=0.01))
+abline(c(0,1),c(0,1))
 
 suitables1a <- stack(c("suitables1Aggr.tif", "suitables2Aggr.tif", "suitables3Aggr.tif"))
 suitables2a <- stack(c("suitables11Aggr.tif", "suitables22Aggr.tif", "suitables33Aggr.tif"))

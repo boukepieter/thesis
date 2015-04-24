@@ -13,12 +13,16 @@ resetPar <- function() {
 wgs84 = CRS('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 cols <- rev(brewer.pal(11,"Spectral")[c(1,2,3,4,5,8,9,10,11)])
 brks <- c(10000,20000,50000,100000,200000,400000,750000,1500000,3000000)
-nms <- c(">10 kW", ">20 kW", ">50 kW", ">100 kW", ">200 kW", ">400 kW", ">750 kW", ">1.5 MW", ">3.0 MW")
+nms <- c("10 - 20", "20 - 50", "50 - 100", "100 - 200", "200 - 400", "400 - 750", "750 - 1,500", ">1,500", ">3.0 MW")
 ext <- c(736411, 741789, 704418,707888)
 mymap <- gmap(crwgs, type='satellite',rgb=T, lonlat=T, zoom=12)
 months <- c("January", "February", "March", "April", "May", "June", "July", "August",
             "September", "October", "November", "December")
 scenarios <- c("0.0", "0.6", "0.3")
+riv <- readOGR(dsn="E:/thesis/data/rivers_small.shp", layer="rivers_small")
+riv <- spTransform(riv,wgs84)
+riv$lwd=riv$grid_code - 4
+writeOGR(dsn="E:/thesis/data/", "rivers_smallwgs", driver="ESRI Shapefile")
 
 ### testPLOT
 
@@ -49,8 +53,9 @@ plot(crwgs, main="Potential with increased spatial resolution",
      col=cols, breaks=brks,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+legend("bottomleft", legend = nms[1:high], fill = cols[1:high], cex=0.8)
 text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
 
 #### Default Model
@@ -59,13 +64,18 @@ res <- raster("output/highPotentialA.tif")
 high <- 7
 cr <- crop(res, extent(ext))
 crwgs <- projectRaster(cr, crs=wgs84)
-plot(crwgs, main="Potential following the default model",
+
+
+plot(crwgs, #main="Potential following the default model",
      col=cols, breaks=brks,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+plot(riv,lwd=riv$lwd, add=T)
+legend("bottomleft", legend = nms[1:high], fill = cols[1:high], cex=0.8)
 text(x=125.186, y=6.366, labels="background: GoogleMaps", cex=0.7)
+
+
 
 ### Costrasters and monthly
 setwd("E:/thesis/workspace1b/output")
@@ -82,8 +92,9 @@ for (i in 1:12){
        col=cols, breaks=brks,
        xlim=ext[1:2], ylim=ext[3:4], legend=F)
   plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
   plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-  legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  legend("bottomleft", legend = nms[1:high], fill = cols[1:high], cex=0.8)
   text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
   dev.off()
 }
@@ -100,6 +111,7 @@ for (i in 1:6){
        col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
        xlim=ext[1:2], ylim=ext[3:4], legend=F)
   plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
   plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
   #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
   text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
@@ -116,8 +128,9 @@ for (i in 7:12){
        col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
        xlim=ext[1:2], ylim=ext[3:4], legend=F)
   plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
   plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-  #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
   text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
 }
 dev.off()
@@ -132,8 +145,9 @@ for (i in 1:12){
        col=cols, breaks=brks,
        xlim=ext[1:2], ylim=ext[3:4], legend=F)
   plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
   plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-  legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  legend("bottomleft", legend = nms[1:high], fill = cols[1:high], cex=0.8)
   text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
   dev.off()
 }
@@ -146,44 +160,51 @@ for (i in 1:12){
        col=cols, breaks=brks,
        xlim=ext[1:2], ylim=ext[3:4], legend=F)
   plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
   plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-  legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  legend("bottomleft", legend = nms[1:high], fill = cols[1:high], cex=0.8)
   text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
   dev.off()
 }
-for (j in 2:3){
-  mar <- matrix(c(1,3,2,4,6,5),nrow=3)
-  png(sprintf("E:/thesis/reports/Thesis_report/figures/scenarios%dA.png", j),
-      width = 2*783, height = 3*513, units = "px", pointsize = 16)
-  layout(mar)
-  for (i in 1:6){
-    cr <- crop(res[[j]][[i]], extent(ext))
-    crwgs <- projectRaster(cr, crs=wgs84)
-    plot(crwgs, main=sprintf("Potential for %s with storage factor %s", months[i], scenarios[j]),
-         col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
-         xlim=ext[1:2], ylim=ext[3:4], legend=F)
-    plotRGB(mymap, alpha=150, add=T)
-    plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-    #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
-    text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
-  }
-  dev.off()
-  png(sprintf("E:/thesis/reports/Thesis_report/figures/scenarios%dB.png", j),
-      width = 2*783, height = 3*513, units = "px", pointsize = 16)
-  layout(mar)
-  for (i in 7:12){
-    cr <- crop(res[[j]][[i]], extent(ext))
-    crwgs <- projectRaster(cr, crs=wgs84)
-    plot(crwgs, main=sprintf("Potential for %s with storage factor %s", months[i], scenarios[j]),
-         col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
-         xlim=ext[1:2], ylim=ext[3:4], legend=F)
-    plotRGB(mymap, alpha=150, add=T)
-    plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-    #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
-    text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
-  }
-  dev.off()
+rest <- stack(res[[1]][[2]],res[[1]][[12]],res[[3]][[2]],res[[3]][[12]],res[[2]][[2]],res[[2]][[12]])
+monthst <- rep(c(months[2],months[12]),3)
+scenariost <- c(rep(scenarios[1],2),rep(scenarios[3],2),rep(scenarios[2],2))
+mar <- matrix(c(1,3,2,4,6,5),nrow=3)
+png("E:/thesis/reports/Thesis_report/figures/scenariosA.png",
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+for (i in 1:6){
+  cr <- crop(rest[[i]], extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84)
+  plot(crwgs, main=sprintf("Potential for %s with storage factor %s", monthst[i], scenariost[i]),     
+       col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
+       xlim=ext[1:2], ylim=ext[3:4], legend=F)
+  plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
+  plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+  #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
 }
+dev.off()
+
+rest <- stack(res[[1]][[6]],res[[1]][[8]],res[[3]][[6]],res[[3]][[8]],res[[2]][[6]],res[[2]][[8]])
+monthst <- rep(c(months[6],months[8]),3)
+png("E:/thesis/reports/Thesis_report/figures/scenariosB.png",
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+for (i in 1:6){
+  cr <- crop(rest[[i]], extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84)
+  plot(crwgs, main=sprintf("Potential for %s with storage factor %s", monthst[i], scenariost[i]),     
+       col=cols, breaks=brks, cex.main=2.0, cex.axis=2.0,
+       xlim=ext[1:2], ylim=ext[3:4], legend=F)
+  plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
+  plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+  #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+  text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=1)
+}
+dev.off()
 ### LINE for one point
 
 poi <- SpatialPoints(matrix(c(740259.159884, 706064.023617),nrow=1),
@@ -200,7 +221,7 @@ for(i in 2:3){
   lines(facts[[i]][1,]/1000, col=cols[i], type='b')
 }
 lines(rep(0,12), col="black", type='l', lty=2)
-legend("topleft", legend=c("1.0", "0.7","0.4"), col=c("red", "green", "blue"), pch=1)
+legend("topleft", legend=c("1.0", "0.7","0.4"), col=c("red", "green", "blue"), pch=1, cex=0.8)
 title(paste(sprintf("Runoff at point %d, %d for storage factors", 
                     as.integer(poi@coords)[1], as.integer(poi@coords)[2]), 
             paste("1.0", "0.7", "0.4",sep=", ")))
@@ -242,6 +263,7 @@ for (j in 1:3){
          xlim=ext[1:2], ylim=ext[3:4])
     plotRGB(mymap, alpha=150, add=T)
     plot(crwgs, add=T, legend=F, zlim=c(0,50))
+    plot(riv,lwd=riv$lwd, add=T)
     text(x=125.184, y=6.368, labels="background: GoogleMaps", cex=0.7)
     dev.off()
   }}
@@ -260,6 +282,7 @@ for (i in 1:6){
        zlim=c(0,50), legend=F, cex.main=2.0, cex.axis=2.0,
        xlim=ext[1:2], ylim=ext[3:4])
   plotRGB(mymap, alpha=150, add=T)
+  plot(riv,lwd=riv$lwd, add=T)
   plot(crwgs, add=T, legend=F, zlim=c(0,50))
   text(x=125.184, y=6.3673, labels="background: GoogleMaps", cex=1.0)
 }
@@ -268,7 +291,7 @@ dev.off()
 plot(crwgs, main="",
      zlim=c(0,0),
      xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
-color.legend(125.135,6.38,125.185,6.384, legend=paste(seq(0,50,10),"%"), rect.col=rev(terrain.colors(6)), 
+color.legend(125.135,6.38,125.185,6.384, legend=paste(seq(0,0.5,0.1)), rect.col=rev(terrain.colors(6)), 
              gradient="x", cex=1)
 
 ### Error Prop aggr
@@ -311,6 +334,7 @@ for (i in 1:6){
        xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
   plotRGB(mymap, alpha=150, add=T)
   plot(crwgs, add=T, legend=F, zlim=c(0,z))
+  plot(riv,lwd=riv$lwd, add=T)
   text(x=125.184, y=6.366, labels="background: GoogleMaps", cex=1.0)
   
 }
@@ -344,11 +368,16 @@ for (i in 1:6){
        zlim=c(0,z), cex.axis=2.0, cex.main=2,
        xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
   plotRGB(mymap, alpha=150, add=T)
-  plot(crwgs, add=T, legend=F, zlim=c(0,z))
+  
+  
   if (i%%2==1){
+    plot(riv,lwd=riv$lwd, add=T)
+    plot(crwgs, add=T, legend=F, zlim=c(0,z))
     text(x=125.184, y=6.3673, labels="background: GoogleMaps", cex=1.0)
   }
   else{
+    plot(crwgs, add=T, legend=F, zlim=c(0,z))
+    plot(riv,lwd=riv$lwd, add=T)
     text(x=125.184, y=6.366, labels="background: GoogleMaps", cex=1.0)
   }
   
@@ -395,13 +424,14 @@ plot(crwgs, main="Mean potential of all the Monte Carlo runs",
      col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
 
-point <- readOGR(dsn="E:/thesis/data", layer="Inlet")
-plot(point,add=T, pch=20, cex=2)
-plot(point,add=T, cex=2)
+# point <- readOGR(dsn="E:/thesis/data", layer="Inlet")
+# plot(point,add=T, pch=20, cex=2)
+# plot(point,add=T, cex=2)
 
 res <- raster("mean27.tif")
 crwgs <- projectRaster(res, crs=wgs84)
@@ -409,6 +439,7 @@ plot(crwgs, main="Mean potential of 27th Monte Carlo run",
      col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
@@ -419,6 +450,7 @@ plot(crwgs, main="5 percentile of all the Monte Carlo runs",
      col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
@@ -429,6 +461,7 @@ plot(crwgs, main="Mean potential of 92nd Monte Carlo run",
      col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
@@ -439,6 +472,7 @@ plot(crwgs, main="95 percentile of all the Monte Carlo runs",
      col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
@@ -449,6 +483,7 @@ plot(crwgs, main="Mean potential of 150th Monte Carlo run",
      col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
@@ -458,27 +493,127 @@ dev.off()
 
 
 #Comparison
-res <- means2
-high <- 8
-cr <- crop(res, extent(ext))
-crwgs <- projectRaster(cr, crs=wgs84)
-plot(crwgs, main="Mean potential with planned location",
-     col=cols, breaks=brks,
-     xlim=ext[1:2], ylim=ext[3:4], legend=F)
-plotRGB(mymap, alpha=150, add=T)
-plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
-inlet <- readOG
-text(x=125.180, y=6.368, labels="background: GoogleMaps", cex=0.7)
 
 point <- readOGR(dsn="E:/thesis/data", layer="Inlet")
-plot(point,add=T, pch=19,cex=2, col='red')
+
+
+mar <- matrix(c(1,2,3,4,5,6),nrow=3)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/meanetc.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+
+#1
+setwd("E:/thesis/workspace1b/output")
+names <- lapply(1:3,FUN=function(x){sprintf("highPotential%i_%02d.tif", x, 1:12)})
+res <- lapply(X=names, FUN=stack)
+mean <- mean(res[[3]], na.rm=T)
+
+cr <- crop(mean, extent(ext))
+crwgs <- projectRaster(cr, crs=wgs84)
+plot(crwgs, #main="Annual potential according to the 0.3 groundwater storage scenario",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+plot(point,add=T, pch=20, cex=2, col="red")
 plot(point,add=T, cex=2)
 
-res3 <- resample(res, cr, na.rm=T, method="max")
-res3 <- aggregate(res, 3, na.rm=T, fun="max")
-plot(res3)
-res3 <- res - cr
-head <- raster("E:/thesis/workspace1b/step/head.tif")
-library(plotKML)
-plotKML(head)
+#2
+ones <- reclassify(res[[3]], matrix(c(-5,0,0,0,10000000,1),nrow=2,byrow=T), right=NA)
+sum <- sum(ones, na.rm=T)
+selection <- reclassify(sum, matrix(c(-5,9.5,NA,9.5,15,1),nrow=2,byrow=T), right=NA)
+rest <- selection * mean
+
+cr <- crop(rest, extent(ext))
+crwgs <- projectRaster(cr, crs=wgs84)
+plot(crwgs, #main="Annual potential according to the 0.3 groundwater storage scenario",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+plot(point,add=T, pch=20, cex=2, col="red")
+plot(point,add=T, cex=2)
+
+#3
+
+restt <- reclassify(rest, matrix(c(-5,1500000,NA,1500000,10000000,1),nrow=2,byrow=T), right=NA)
+
+cr <- crop(restt, extent(ext))
+crwgs <- projectRaster(cr, crs=wgs84, method="ngb")
+plot(crwgs, #main="Annual potential according to the 0.3 groundwater storage scenario",
+     #col=cols, breaks=brks,
+     cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
+plot(crwgs, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+plot(point,add=T, pch=20, cex=2, col="red")
+plot(point,add=T, cex=2)
+
+dev.off()
+
+
+
+### OVerview map for results
+dem <- raster("E:/thesis/data/dem/ASTGTM2_N06E125/ASTGTM2_N06E125_dem.tif")
+shed <- readOGR(dsn="E:/thesis/workspace1b/step/watershed.shp", layer="watershed")
+shed <- spTransform(shed, wgs84)
+dem <- crop(dem,shed)
+demM <- mask(dem,shed)
+extshape <- polygonFromExtent(ext, sp=TRUE)
+area <- crop(res,ext)
+area <- projectRaster(area, crs=wgs84)
+ext2 <- extent(area)
+library(rgeos)
+riv <- readOGR(dsn="E:/thesis/data/rivers.shp", layer="rivers")
+riv2 <- gIntersection(riv, shed)
+
+plot(demM)
+lines(c(ext2[1], ext2[2]),c(ext2[3],ext2[3]),lwd=2)
+lines(c(ext2[1], ext2[2]),c(ext2[4],ext2[4]),lwd=2)
+lines(c(ext2[1], ext2[1]),c(ext2[3],ext2[4]),lwd=2)
+lines(c(ext2[2], ext2[2]),c(ext2[3],ext2[4]),lwd=2)
+plot(riv2, col="blue", add=T)
+
+plot(demM, col=c("red","yellow","lightgreen","darkgreen"), breaks=c(-1.1,0.1,2.1,5.1,10.1),
+     legend=F, main="QA of ASTER GDEM for the study area")
+legend("bottomleft", legend = c("-1","1-2","3-5","6-10"), 
+       fill = c("red","yellow","lightgreen","darkgreen"))
+plot(shed, add=T)
+
+### Streams
+riv <- readOGR(dsn="E:/thesis/data/rivers_small.shp", layer="rivers_small")
+plot(riv,col=riv$grid_code, add=T)
+riv
+
+### DEM realisations
+
+mar <- matrix(c(1,2,3,4),nrow=2,byrow=T)
+png(sprintf("E:/thesis/reports/Thesis_report/figures/realisations.png"),
+    width = 2*783, height = 2*513, units = "px", pointsize = 16)
+layout(mar)
+res <- raster("E:/thesis/workspace/input/DEM.tif")
+cr <- crop(res, extent(ext))
+crwgs <- projectRaster(cr, crs=wgs84)
+plot(crwgs,cex.axis=2.0,
+     #col=cols, breaks=brks,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+for( i in 1:3){
+  res <- raster(sprintf("E:/thesis/workspace/MCAnalyse/input/DEM/DEM00%d.tif",i))
+  cr <- crop(res, extent(ext))
+  crwgs <- projectRaster(cr, crs=wgs84)
+  plot(crwgs, cex.axis=2.0,#main="Potential following the default model",
+       #col=cols, breaks=brks,
+       xlim=ext[1:2], ylim=ext[3:4], legend=F)
+}
+dev.off()
+
+#plot(riv,lwd=riv$lwd, add=T)

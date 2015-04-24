@@ -70,12 +70,15 @@ HydroPowerMonthly <- function(DEMfile = "input/DEM.tif", Pdir = "input/P", ETdir
   
   # Runoff delay scenarios
   source("scripts/runoffStorage.R")
-  factors <- list(0.4,0.7)
+  factors <- list(0.6,0.3)
   runoffs <- lapply(factors,FUN=storage.fun,debiet=debiet,noSteps=noSteps)
-  #poi <- SpatialPoints(matrix(c(737522.424973, 706557.393475),nrow=1),
-  #                     proj4string=CRS(projection(debiet[[1]])))
-  #testplot.storages(runoffs,debiet,poi, factors)
   runoffs <- c(debiet, runoffs)
+  ##poi <- SpatialPoints(matrix(c(737522.424973, 706557.393475),nrow=1),
+  ##                     proj4string=CRS(projection(debiet[[1]])))
+  #poi <- SpatialPoints(coord,
+  #                     proj4string=wgs84)
+  #poi <- spTransform(poi, utm51)
+  #testplot.storages(runoffs,debiet,poi, factors)
   
   # head
   print("calculating head...")
