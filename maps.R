@@ -495,41 +495,27 @@ dev.off()
 #Comparison
 
 point <- readOGR(dsn="E:/thesis/data", layer="Inlet")
-
-
-mar <- matrix(c(1,2,3,4,5,6),nrow=3)
-png(sprintf("E:/thesis/reports/Thesis_report/figures/meanetc.png"),
-    width = 2*783, height = 3*513, units = "px", pointsize = 16)
-layout(mar)
-
-#1
 setwd("E:/thesis/workspace1b/output")
 names <- lapply(1:3,FUN=function(x){sprintf("highPotential%i_%02d.tif", x, 1:12)})
 res <- lapply(X=names, FUN=stack)
 mean <- mean(res[[3]], na.rm=T)
-
-cr <- crop(mean, extent(ext))
-crwgs <- projectRaster(cr, crs=wgs84)
-plot(crwgs, #main="Annual potential according to the 0.3 groundwater storage scenario",
-     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
-     xlim=ext[1:2], ylim=ext[3:4], legend=F)
-plotRGB(mymap, alpha=150, add=T)
-plot(riv,lwd=riv$lwd, add=T)
-plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
-#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
-text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
-plot(point,add=T, pch=20, cex=2, col="red")
-plot(point,add=T, cex=2)
-
-#2
 ones <- reclassify(res[[3]], matrix(c(-5,0,0,0,10000000,1),nrow=2,byrow=T), right=NA)
 sum <- sum(ones, na.rm=T)
 selection <- reclassify(sum, matrix(c(-5,9.5,NA,9.5,15,1),nrow=2,byrow=T), right=NA)
 rest <- selection * mean
+restt <- reclassify(rest, matrix(c(-5,1500000,NA,1500000,10000000,1),nrow=2,byrow=T), right=NA)
 
-cr <- crop(rest, extent(ext))
+
+mar <- matrix(c(1,2,3,4,5,6),nrow=3)
+
+png(sprintf("E:/thesis/reports/Thesis_report/figures/comparison.png"),
+    width = 2*783, height = 3*513, units = "px", pointsize = 16)
+layout(mar)
+
+#1
+cr <- crop(mean, extent(ext))
 crwgs <- projectRaster(cr, crs=wgs84)
-plot(crwgs, #main="Annual potential according to the 0.3 groundwater storage scenario",
+plot(crwgs, main="a",
      col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
@@ -537,26 +523,52 @@ plot(riv,lwd=riv$lwd, add=T)
 plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
-plot(point,add=T, pch=20, cex=2, col="red")
+plot(point,add=T, pch=20, cex=4, col="red")
+plot(point,add=T, cex=2)
+
+#2
+cr <- crop(rest, extent(ext))
+crwgs <- projectRaster(cr, crs=wgs84)
+plot(crwgs, main="b",
+     col=cols, breaks=brks,cex.axis=2.0, cex.main=2,
+     xlim=ext[1:2], ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(riv,lwd=riv$lwd, add=T)
+plot(crwgs, col=cols, breaks=brks, add=T, legend=F)
+#legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
+text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
+plot(point,add=T, pch=20, cex=4, col="red")
 plot(point,add=T, cex=2)
 
 #3
+cr <- crop(suitables[[2]][[3]], extent(ext))
+crwgs <- projectRaster(cr, crs=wgs84, method='ngb')
+crwgs[crwgs==0] <- NA
+plot(crwgs, main=sprintf("c", scenarios[2]),
+     zlim=c(0,z), cex.axis=2.0, cex.main=2,
+     xlim=c(125.13,125.19), ylim=ext[3:4], legend=F)
+plotRGB(mymap, alpha=150, add=T)
+plot(crwgs, add=T, legend=F, zlim=c(0,z))
+plot(riv,lwd=riv$lwd, add=T)
+text(x=125.184, y=6.366, labels="background: GoogleMaps", cex=1.0)
+plot(point,add=T, pch=20, cex=4, col="red")
+plot(point,add=T, cex=2)
 
-restt <- reclassify(rest, matrix(c(-5,1500000,NA,1500000,10000000,1),nrow=2,byrow=T), right=NA)
-
+#4
 cr <- crop(restt, extent(ext))
 crwgs <- projectRaster(cr, crs=wgs84, method="ngb")
-plot(crwgs, #main="Annual potential according to the 0.3 groundwater storage scenario",
+plot(crwgs, main="d",
      #col=cols, breaks=brks,
      cex.axis=2.0, cex.main=2,
      xlim=ext[1:2], ylim=ext[3:4], legend=F)
 plotRGB(mymap, alpha=150, add=T)
 plot(riv,lwd=riv$lwd, add=T)
-plot(crwgs, add=T, legend=F)
+plot(crwgs, add=T, legend=F, col="red")
 #legend("bottomleft", legend = nms[1:high], fill = cols[1:high])
 text(x=125.184, y=6.3675, labels="background: GoogleMaps", cex=1)
-plot(point,add=T, pch=20, cex=2, col="red")
+plot(point,add=T, pch=20, cex=4, col="red")
 plot(point,add=T, cex=2)
+
 
 dev.off()
 
@@ -616,4 +628,33 @@ for( i in 1:3){
 }
 dev.off()
 
-#plot(riv,lwd=riv$lwd, add=T)
+# rain trend
+shed <- readOGR(dsn="E:/thesis/workspace1b/step/watershed.shp", layer="watershed")
+P <- stack(sprintf("E:/thesis/workspace1b/input/P/P%02d.tif", 1:12))
+mask <- mask(P, shed)
+means <- c()
+for (i in 1:12){
+means[i] <- mean(mask[[i]][], na.rm=T)
+}
+library(ggplot2)
+plot(means, xlim=c(1,12), ylim=c(0,13))
+lines(means)
+dat <- data.frame(precipitation=means, month=months)
+dat$month <- factor(dat$month, levels = dat$month, ordered = TRUE)
+ggplot(data=dat, aes(x=month, y=precipitation, group=1)) +
+  geom_line()
+ggplot(data=dat, aes(x=month, y=precipitation)) +
+  geom_bar(stat="identity")
+mean(means)*365
+
+resamp <- resample(mask, cr)
+clipped <- crop(resamp, extent(ext))
+means2 <- c()
+for (i in 1:12){
+  means2[i] <- mean(clipped[[i]][], na.rm=T)
+}
+dat <- data.frame(precipitation=means2, month=months)
+dat$month <- factor(dat$month, levels = dat$month, ordered = TRUE)
+ggplot(data=dat, aes(x=month, y=precipitation)) +
+  geom_bar(stat="identity")
+mean(means2)*365
